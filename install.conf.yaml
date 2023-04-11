@@ -6,5 +6,7 @@
 - clean: ['~']
 
 - link:
-    ~/.zshrc: .zshrc
+    ~/.bashrc: .bashrc
+    ~/.bash_aliases: .bash_aliases
+    ~/files/starship.toml: .config/starship.toml
     ~/.gitconfig: .gitconfig

@@ -1,0 +1,7 @@
+alias update='sudo -- sh -c "apt update && apt upgrade -y"'
+
+alias l='ls --color -lha --group-directories-first'
+alias cddev='cd /devdata'
+
+alias dps='docker ps --format="table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.State}}\t{{.Status}}"'
+alias dpsp='docker ps --format="table {{.Names}}\t{{.ID}}\t{{.Image}}\t{{.RunningFor}}\t{{.State}}\t{{.Status}}\t{{.Ports}}"'
