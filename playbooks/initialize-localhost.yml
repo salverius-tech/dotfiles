@@ -32,7 +32,7 @@
         executable: /bin/sh
       become: yes
 
-    - name: Read-write git checkout from github
-      ansible.builtin.git:
-        repo: ssh://git@172.30.40.51:2222/salverius/nxs-homelab-ansible.git
-        dest: /repos/nxs-homelab-ansible
+#    - name: Read-write git checkout from github
+#      ansible.builtin.git:
+#        repo: ssh://git@172.30.40.51:2222/salverius/nxs-homelab-ansible.git
+#        dest: /repos/nxs-homelab-ansible
