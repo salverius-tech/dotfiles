@@ -1,5 +1,7 @@
 alias update='sudo -- sh -c "apt update && apt upgrade -y"'
 
+alias kc='kubectl'
+
 alias l='ls --color -lha --group-directories-first'
 alias cddev='cd /devdata'
 

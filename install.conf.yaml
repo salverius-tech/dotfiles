@@ -11,7 +11,7 @@
     ~/.config/starship.toml:
         create: true
         path: files/starship.toml
-#    ~/.gitconfig: .gitconfig
+    ~/.gitconfig: .gitconfig
 
 - shell:
     - [just initialize-localhost]
