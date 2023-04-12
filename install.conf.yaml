@@ -8,6 +8,8 @@
 - link:
     ~/.bashrc: .bashrc
     ~/.bash_aliases: .bash_aliases
+    ~/repos:
+        create: true
     ~/.config/starship.toml:
         create: true
         path: files/starship.toml
