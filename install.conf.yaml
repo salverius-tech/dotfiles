@@ -8,5 +8,5 @@
 - link:
     ~/.bashrc: .bashrc
     ~/.bash_aliases: .bash_aliases
-    ~/.config/starship.toml: files/starship.toml
+#    ~/.config/starship.toml: files/starship.toml
 #    ~/.gitconfig: .gitconfig
