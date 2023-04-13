@@ -13,5 +13,8 @@
         path: files/starship.toml
     ~/.gitconfig: .gitconfig
 
-- shell:
-    - [just initialize-localhost]
+# - shell:
+    # - [just initialize-localhost]
+    # - command: curl -fsSL https://starship.rs/install.sh | sh -s -- --yes
+    #   stdout: true
+    #   stderr: true
