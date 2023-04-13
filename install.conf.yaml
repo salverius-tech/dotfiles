@@ -6,8 +6,8 @@
 - clean: ['~']
 
 - link:
-    ~/.bashrc: .bashrc
-    ~/.bash_aliases: .bash_aliases
+    ~/.bashrc: shells/bash/profile
+    ~/.bash_aliases: shells/bash/aliases
     ~/.config/starship.toml:
         create: true
         path: files/starship.toml
