@@ -5,12 +5,14 @@
 
 - clean: ['~']
 
+- create:
+    - ~/.config
+    - ~/repos
+
 - link:
     ~/.bashrc: shells/bash/profile
     ~/.bash_aliases: shells/bash/aliases
-    ~/.config/starship.toml:
-        create: true
-        path: files/starship.toml
+    ~/.config/starship.toml: prompts/starship/config
     ~/.gitconfig: .gitconfig
 
 - shell:
