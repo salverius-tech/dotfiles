@@ -6,31 +6,31 @@
         update_cache: yes
         upgrade: yes
 
-    - name: Install Dependencies
-      apk:
-        name:
-        - nano
-        state: present
-        update_cache: yes
+    # - name: Install Dependencies
+    #   apk:
+    #     name:
+    #     - nano
+    #     state: present
+    #     update_cache: yes
 
-    - name: Create Starship Config Directory
-      file:
-        name: "/home/{{ lookup('env','USER') }}/.config"
-        state: directory
-        owner: "{{ lookup('env','USER') }}"
-        group: "{{ lookup('env','USER') }}"
+    # - name: Create Starship Config Directory
+    #   file:
+    #     name: "/home/{{ lookup('env','USER') }}/.config"
+    #     state: directory
+    #     owner: "{{ lookup('env','USER') }}"
+    #     group: "{{ lookup('env','USER') }}"
 
-    - name: Get starship install script
-      get_url:
-        url: https://starship.rs/install.sh
-        dest: /tmp/starship_install.sh
-        mode: '0755'
+    # - name: Get starship install script
+    #   get_url:
+    #     url: https://starship.rs/install.sh
+    #     dest: /tmp/starship_install.sh
+    #     mode: '0755'
 
-    - name: Install starship
-      shell:
-        cmd: /tmp/starship_install.sh --yes
-        executable: /bin/sh
-      become: yes
+    # - name: Install starship
+    #   shell:
+    #     cmd: /tmp/starship_install.sh --yes
+    #     executable: /bin/sh
+    #   become: yes
 
 #    - name: Read-write git checkout from github
 #      ansible.builtin.git:
