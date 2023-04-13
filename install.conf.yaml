@@ -21,3 +21,4 @@
       stdout: true
       stderr: true
     - command: "git clone git@github.com:salverius-tech/upgraded-barnacle.git ~/repos/upgraded-barnacle"
+    - command: "git clone ssh://git@172.30.40.51:2222/salverius/nxs-homelab-ansible.git ~/repos/nxs-homelab-ansible"
