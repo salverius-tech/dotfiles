@@ -14,6 +14,7 @@
     ~/.bash_aliases: shells/bash/aliases
     ~/.config/starship.toml: prompts/starship/config
     ~/.gitconfig: .gitconfig
+    /app/.repos: ~/repos
 
 - shell:
     # - [just initialize-localhost]
