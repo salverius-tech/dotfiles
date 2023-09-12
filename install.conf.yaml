@@ -21,6 +21,8 @@
     - command: "curl -fsSL https://starship.rs/install.sh | sh -s -- --yes"
       stdout: true
       stderr: true
+    - command: cp /mnt/.ssh/id_* ~/.ssh/
+    - command: rm -r ~/.ssh/known_hosts
     - command: "git clone git@github.com:salverius-tech/upgraded-barnacle.git /app/.repos/upgraded-barnacle"
     - command: "git clone ssh://git@172.30.40.51:2222/salverius/nxs-homelab-ansible.git /app/.repos/nxs-homelab-ansible"
     - command: "sudo apk add sshpass"
