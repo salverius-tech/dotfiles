@@ -7,7 +7,7 @@
 
 - create:
     - ~/.config
-    - ~/repos
+    # - ~/repos
 
 - link:
     ~/.bashrc: shells/bash/profile
@@ -23,3 +23,4 @@
       stderr: true
     - command: "git clone git@github.com:salverius-tech/upgraded-barnacle.git /app/.repos/upgraded-barnacle"
     - command: "git clone ssh://git@172.30.40.51:2222/salverius/nxs-homelab-ansible.git /app/.repos/nxs-homelab-ansible"
+    - command: "sudo apk add sshpass"
