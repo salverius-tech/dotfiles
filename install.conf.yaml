@@ -7,14 +7,12 @@
 
 - create:
     - ~/.config
-    # - ~/repos
 
 - link:
     ~/.bashrc: shells/bash/profile
     ~/.bash_aliases: shells/bash/aliases
     ~/.config/starship.toml: prompts/starship/config
     ~/.gitconfig: .gitconfig
-    # /app/.repos: ~/repos
 
 - shell:
     - command: "curl -fsSL https://starship.rs/install.sh | sh -s -- --yes"
@@ -23,6 +21,4 @@
     - command: cp /mnt/.ssh/id_* ~/.ssh/
     - command: rm -r ~/.ssh/known_hosts
     - command: bash /app/.dotfiles/scripts/install-repos.sh
-    # - command: "git clone git@github.com:salverius-tech/upgraded-barnacle.git /app/.repos/upgraded-barnacle"
-    # - command: "git clone ssh://git@172.30.40.51:2222/salverius/nxs-homelab-ansible.git /app/.repos/nxs-homelab-ansible"
-    # - [just initialize-localhost]
+    - [just initialize-localhost]

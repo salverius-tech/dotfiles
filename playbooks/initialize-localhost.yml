@@ -6,33 +6,43 @@
         update_cache: yes
         upgrade: yes
 
+- hosts: localhost
+  tasks:
+    - name: Install Dependencies
+      apk:
+        name:
+        - py3-dnspython
+        state: present
+        update_cache: yes
+
+
 ####################################################################################################################
-    - name: "Read-write git checkout from github"
-      ansible.builtin.git:
-       repo: ssh://git@172.30.40.51:2222/salverius/nxs-homelab-ansible.git
-       dest: /app/.repos/nxs-homelab-ansible
-       clone: 
-       update: 
+    # - name: "Read-write git checkout from github"
+    #   ansible.builtin.git:
+    #    repo: ssh://git@172.30.40.51:2222/salverius/nxs-homelab-ansible.git
+    #    dest: /app/.repos/nxs-homelab-ansible
+    #    clone: 
+    #    update: 
 
-    - name: Stash git changes
-      ansible.builtin.shell:
-        cmd: "git stash"
-        chdir: "/app/.repos/nxs-homelab-ansible"
+    # - name: Stash git changes
+    #   ansible.builtin.shell:
+    #     cmd: "git stash"
+    #     chdir: "/app/.repos/nxs-homelab-ansible"
 
-    - name: Clone a Nginx repo
-      ansible.builtin.git:
-        repo: "ssh://git@172.30.40.51:2222/salverius/nxs-homelab-ansible.git"
-        dest: "/app/.repos/nxs-homelab-ansible"
-        force: yes
+    # - name: Clone a Nginx repo
+    #   ansible.builtin.git:
+    #     repo: "ssh://git@172.30.40.51:2222/salverius/nxs-homelab-ansible.git"
+    #     dest: "/app/.repos/nxs-homelab-ansible"
+    #     force: yes
 
-    - name: Unstash git changes
-      ansible.builtin.shell:
-        cmd: "git stash pop"
-        chdir: "/app/.repos/nxs-homelab-ansible"
-      register: unstash_output
-      failed_when:
-        - unstash_output.failed
-        - not 'No stash entries found' in unstash_output.stderr
+    # - name: Unstash git changes
+    #   ansible.builtin.shell:
+    #     cmd: "git stash pop"
+    #     chdir: "/app/.repos/nxs-homelab-ansible"
+    #   register: unstash_output
+    #   failed_when:
+    #     - unstash_output.failed
+    #     - not 'No stash entries found' in unstash_output.stderr
 
 ####################################################################################################################
     # - name: "Read-write git checkout from github"
