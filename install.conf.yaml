@@ -18,7 +18,7 @@
     - command: "curl -fsSL https://starship.rs/install.sh | sh -s -- --yes"
       stdout: true
       stderr: true
-    - command: cp /mnt/.ssh/id_* ~/.ssh/
-    - command: rm -r ~/.ssh/known_hosts
-    - command: bash /app/.dotfiles/scripts/install-repos.sh
+    # - command: cp /mnt/.ssh/id_* ~/.ssh/
+    # - command: rm -r ~/.ssh/known_hosts
+    - command: ~/.dotfiles/scripts/install-repos.sh
     - [just initialize-localhost]
