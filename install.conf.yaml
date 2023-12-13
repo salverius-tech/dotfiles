@@ -20,5 +20,5 @@
       stderr: true
     # - command: cp /mnt/.ssh/id_* ~/.ssh/
     # - command: rm -r ~/.ssh/known_hosts
-    - command: ~/.dotfiles/scripts/install-repos.sh
+    #- command: ~/.dotfiles/scripts/install-repos.sh
     - [just initialize-localhost]
