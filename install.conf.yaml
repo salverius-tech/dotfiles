@@ -11,6 +11,7 @@
 - link:
     ~/.bashrc: shells/bash/profile
     ~/.bash_aliases: shells/bash/aliases
+    ~/.bash_profile: shells/bash/loginprofile
     ~/.config/starship.toml: prompts/starship/config
     ~/.gitconfig: .gitconfig
 
