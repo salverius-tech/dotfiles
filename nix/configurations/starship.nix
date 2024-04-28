@@ -5,22 +5,29 @@
     add_newline = false;
     format = "$shlvl$shell$username$hostname$nix_shell$git_branch$git_commit$git_state$git_status$directory$jobs$cmd_duration$character";
     
+    aws = {
+      style = "bg:#f9a600 fg:black";
+      symbol = "☁ ";
+      format = "[](fg:black bg:#f9a600)[$symbol$profile]($style)[](fg:#f9a600 bg:black)";
+    };
+
     character = {
       success_symbol = "[❯](#ff9400)";
       error_symbol = "[✗](#ff4b00)";
     };
     
     cmd_duration = {
+      disabled=true;
       style = "#f9a600";
       format = "[](fg:black bg:#f9a600)[祥$duration](bg:$style fg:black)[](fg:$style)";
     };
     
     directory = {
       truncation_length = 0;
-      style = "#c05303";
+      style = "#2B3856";
       truncate_to_repo = false;
       fish_style_pwd_dir_length = 1;
-      format = "[](fg:black bg:#c05303)[$path[$read_only](bg:$style fg:black)](bg:$style fg:black)[](fg:$style)";
+      format = "[](fg:black bg:$style)[$path[$read_only](bg:$style fg:black)](bg:$style fg:black)[](fg:$style)";
       read_only = " ";
     };
 
@@ -94,6 +101,12 @@
       disabled = false;
     };
     
+    time = {
+      disabled = true;
+      style = "#939594";
+      format = "[$time]($style)";
+    };
+
     username = {
       style_user = "#0370C0";
       style_root = "#C00311";
