@@ -12,6 +12,7 @@
       apk:
         name:
         - py3-dnspython
+        - nerd-fonts
         state: present
         update_cache: yes
 
