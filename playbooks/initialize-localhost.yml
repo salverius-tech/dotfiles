@@ -12,7 +12,8 @@
       apk:
         name:
         - py3-dnspython
-        - nerd-fonts
+        - font-jetbrains-mono-nerd
+        - fontconfig
         state: present
         update_cache: yes
 
