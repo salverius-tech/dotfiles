@@ -20,6 +20,9 @@
     - command: "curl -fsSL https://starship.rs/install.sh | sh -s -- --yes"
       stdout: true
       stderr: true
+    - command: "rm -rf ~/.ssh/config"
+      stdout: true
+      stderr: true
     # - command: cp /mnt/.ssh/id_* ~/.ssh/
     # - command: rm -r ~/.ssh/known_hosts
     #- command: ~/.dotfiles/scripts/install-repos.sh
