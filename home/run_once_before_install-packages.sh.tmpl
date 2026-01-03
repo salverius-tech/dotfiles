@@ -1,0 +1,93 @@
+#!/bin/bash
+# chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
+
+set -e
+
+echo "Installing packages for # {{ .package_manager }}..."
+
+# {{ if eq .package_manager "apk" }}
+sudo apk update
+sudo apk add \
+    py3-dnspython \
+    font-jetbrains-mono-nerd \
+    fontconfig \
+    bash-completion \
+    curl
+
+# {{ else if eq .package_manager "apt" }}
+sudo apt update
+sudo apt install -y \
+    python3-dnspython \
+    fontconfig \
+    bash-completion \
+    curl \
+    unzip
+
+# Install JetBrains Mono Nerd Font manually (not in apt repos)
+FONT_DIR="${HOME}/.local/share/fonts"
+mkdir -p "${FONT_DIR}"
+if [ ! -f "${FONT_DIR}/JetBrainsMonoNerdFont-Regular.ttf" ]; then
+    echo "Installing JetBrains Mono Nerd Font..."
+    curl -fsSL -o /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
+    unzip -o /tmp/JetBrainsMono.zip -d "${FONT_DIR}"
+    rm /tmp/JetBrainsMono.zip
+    fc-cache -fv
+fi
+
+# {{ else if eq .package_manager "dnf" }}
+sudo dnf install -y \
+    python3-dns \
+    fontconfig \
+    bash-completion \
+    curl \
+    unzip
+
+# Install JetBrains Mono Nerd Font manually
+FONT_DIR="${HOME}/.local/share/fonts"
+mkdir -p "${FONT_DIR}"
+if [ ! -f "${FONT_DIR}/JetBrainsMonoNerdFont-Regular.ttf" ]; then
+    echo "Installing JetBrains Mono Nerd Font..."
+    curl -fsSL -o /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
+    unzip -o /tmp/JetBrainsMono.zip -d "${FONT_DIR}"
+    rm /tmp/JetBrainsMono.zip
+    fc-cache -fv
+fi
+
+# {{ else if eq .package_manager "pacman" }}
+sudo pacman -Syu --noconfirm \
+    python-dnspython \
+    ttf-jetbrains-mono-nerd \
+    fontconfig \
+    bash-completion \
+    curl
+
+# {{ else if eq .package_manager "zypper" }}
+sudo zypper install -y \
+    python3-dnspython \
+    fontconfig \
+    bash-completion \
+    curl \
+    unzip
+
+# Install JetBrains Mono Nerd Font manually
+FONT_DIR="${HOME}/.local/share/fonts"
+mkdir -p "${FONT_DIR}"
+if [ ! -f "${FONT_DIR}/JetBrainsMonoNerdFont-Regular.ttf" ]; then
+    echo "Installing JetBrains Mono Nerd Font..."
+    curl -fsSL -o /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
+    unzip -o /tmp/JetBrainsMono.zip -d "${FONT_DIR}"
+    rm /tmp/JetBrainsMono.zip
+    fc-cache -fv
+fi
+
+# {{ else if eq .package_manager "brew" }}
+brew install \
+    python3 \
+    fontconfig
+
+brew tap homebrew/cask-fonts
+brew install --cask font-jetbrains-mono-nerd-font
+
+# {{ end }}
+
+echo "Package installation complete!"

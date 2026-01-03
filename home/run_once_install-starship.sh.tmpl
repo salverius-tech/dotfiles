@@ -1,0 +1,13 @@
+#!/bin/bash
+# chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
+
+set -e
+
+# {{ if ne .chezmoi.os "windows" }}
+if ! command -v starship &> /dev/null; then
+    echo "Installing Starship prompt..."
+    curl -fsSL https://starship.rs/install.sh | sh -s -- --yes
+else
+    echo "Starship already installed, skipping..."
+fi
+# {{ end }}

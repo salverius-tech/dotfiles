@@ -1,0 +1,16 @@
+README.md
+LICENSE
+
+{{- if ne .chezmoi.os "windows" }}
+# Ignore PowerShell profile on non-Windows
+Documents/
+{{- end }}
+
+{{- if eq .chezmoi.os "windows" }}
+# Ignore bash configs on Windows (unless using Git Bash)
+dot_bashrc.tmpl
+dot_bash_aliases.tmpl
+dot_bash_profile
+run_once_before_install-packages.sh.tmpl
+run_once_install-starship.sh.tmpl
+{{- end }}

@@ -1,0 +1,33 @@
+{{- $osid := .chezmoi.os -}}
+{{- if hasKey .chezmoi "osRelease" -}}
+{{-   $osid = printf "%s-%s" .chezmoi.os .chezmoi.osRelease.id -}}
+{{- end -}}
+
+{{- $packageManager := "unknown" -}}
+{{- if eq .chezmoi.os "windows" -}}
+{{-   $packageManager = "winget" -}}
+{{- else if eq .chezmoi.os "darwin" -}}
+{{-   $packageManager = "brew" -}}
+{{- else if lookPath "apk" -}}
+{{-   $packageManager = "apk" -}}
+{{- else if lookPath "apt" -}}
+{{-   $packageManager = "apt" -}}
+{{- else if lookPath "dnf" -}}
+{{-   $packageManager = "dnf" -}}
+{{- else if lookPath "pacman" -}}
+{{-   $packageManager = "pacman" -}}
+{{- else if lookPath "zypper" -}}
+{{-   $packageManager = "zypper" -}}
+{{- else if lookPath "nix-env" -}}
+{{-   $packageManager = "nix" -}}
+{{- end -}}
+
+{{- $isWsl := false -}}
+{{- if and (eq .chezmoi.os "linux") (lookPath "wslpath") -}}
+{{-   $isWsl = true -}}
+{{- end -}}
+
+[data]
+    osid = {{ $osid | quote }}
+    package_manager = {{ $packageManager | quote }}
+    is_wsl = {{ $isWsl }}
