@@ -22,7 +22,7 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply salverius-tech/dotfiles
 
 ```powershell
 winget install twpayne.chezmoi
-chemzoi init --apply salverius-tech/dotfiles
+chezmoi init --apply salverius-tech/dotfiles
 ```
 
 ## What's Included
