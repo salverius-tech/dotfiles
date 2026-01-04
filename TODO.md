@@ -1,5 +1,12 @@
-Move localhost setup out of justfile and into an ansible playbook
+# TODO
 
-Setup needs to detect OS running on (Alpine, Ubuntu, etc) and install dependencies accordingly.
+## Completed
+- [x] Migrate from dotbot to chezmoi
+- [x] Detect OS and install dependencies accordingly (distro-agnostic)
+- [x] Gather up and utilize aliases
+- [x] Cross-platform support (Linux, macOS, Windows)
 
-Gather up and utilize aliases
+## Future Enhancements
+- [ ] Add SSH key management templates
+- [ ] Add vim/neovim configuration
+- [ ] Add tmux configuration
