@@ -10,6 +10,11 @@ Cross-platform dotfiles managed with [chezmoi](https://chezmoi.io).
 | macOS | Homebrew |
 | Windows | winget |
 
+## Prerequisites
+
+- `curl` (Linux/macOS) or `winget` (Windows)
+- `git`
+
 ## Installation
 
 ### Linux / macOS
@@ -25,12 +30,32 @@ winget install twpayne.chezmoi
 chezmoi init --apply salverius-tech/dotfiles
 ```
 
+### CI/CD / Automated Setup
+
+Set environment variables before running to customize git configuration:
+
+```bash
+export CHEZMOI_GIT_NAME="Your Name"
+export CHEZMOI_GIT_EMAIL="you@example.com"
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply salverius-tech/dotfiles
+```
+
 ## What's Included
 
 - **Bash configuration** - Custom prompt, aliases, completion
+- **Zsh configuration** - Same features as bash, with kubectl/helm completions
 - **Starship prompt** - Cross-platform prompt with git integration
-- **Git configuration** - Aliases, auto-rebase, credential helpers
+- **Git configuration** - Aliases, auto-rebase, OS-specific credential helpers
+- **Global gitignore** - Common patterns (.DS_Store, node_modules/, etc.)
 - **PowerShell profile** - Windows-equivalent aliases and Starship
+
+### Packages Installed
+
+| Package | Purpose |
+|---------|---------|
+| Starship | Cross-shell prompt |
+| JetBrains Mono Nerd Font | Terminal font with icons |
+| fontconfig | Font management (Linux) |
 
 ## Updating
 
@@ -38,16 +63,26 @@ chezmoi init --apply salverius-tech/dotfiles
 chezmoi update
 ```
 
-## Manual Changes
+## Customization
 
-Edit files in `~/.local/share/chezmoi/` then apply:
-
-```bash
-chezmoi apply
-```
-
-Or edit and apply in one step:
+Edit source files and re-apply:
 
 ```bash
 chezmoi edit ~/.bashrc --apply
 ```
+
+Or edit directly in the source directory:
+
+```bash
+cd ~/.local/share/chezmoi
+# make changes
+chezmoi apply
+```
+
+## NixOS
+
+The `nix/` directory contains standalone NixOS configurations. These are not managed by chezmoi and should be applied separately using NixOS tools.
+
+## License
+
+See [LICENSE](LICENSE) for details.
