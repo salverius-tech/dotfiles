@@ -6,7 +6,15 @@ set -e
 # {{ if ne .chezmoi.os "windows" }}
 if ! command -v starship &> /dev/null; then
     echo "Installing Starship prompt..."
+    # {{ if eq .chezmoi.os "darwin" }}
+    if command -v brew &> /dev/null; then
+        brew install starship
+    else
+        curl -fsSL https://starship.rs/install.sh | sh -s -- --yes
+    fi
+    # {{ else }}
     curl -fsSL https://starship.rs/install.sh | sh -s -- --yes
+    # {{ end }}
 else
     echo "Starship already installed, skipping..."
 fi

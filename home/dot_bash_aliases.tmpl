@@ -51,3 +51,10 @@ alias sdn='sudo shutdown -h now'
 {{- else if eq .chezmoi.os "darwin" }}
 alias sdn='sudo shutdown -h now'
 {{- end }}
+
+# WSL-specific aliases
+{{- if .is_wsl }}
+alias explorer='explorer.exe .'
+alias clip='clip.exe'
+alias open='wslview'
+{{- end }}
