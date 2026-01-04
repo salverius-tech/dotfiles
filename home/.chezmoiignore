@@ -9,7 +9,7 @@ dot_dircolors
 {{- if ne .chezmoi.os "windows" }}
 # Ignore PowerShell profile and Windows scripts on non-Windows
 Documents/
-.chezmoiscripts/windows/
+.chezmoiscripts/windows/**
 {{- end }}
 
 {{- if eq .chezmoi.os "windows" }}
