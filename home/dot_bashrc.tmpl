@@ -6,6 +6,11 @@ case $- in
       *) return;;
 esac
 
+# Add ~/.local/bin to PATH (for chezmoi, starship, etc.)
+if [ -d "$HOME/.local/bin" ] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
 # History settings
 HISTCONTROL=ignoreboth
 shopt -s histappend
