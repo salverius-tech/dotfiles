@@ -28,13 +28,10 @@
 {{- end -}}
 
 {{- $gitName := .chezmoi.username -}}
-{{- $gitEmail := printf "%s@users.noreply.github.com" .chezmoi.username -}}
 {{- if env "CHEZMOI_GIT_NAME" -}}
 {{-   $gitName = env "CHEZMOI_GIT_NAME" -}}
 {{- end -}}
-{{- if env "CHEZMOI_GIT_EMAIL" -}}
-{{-   $gitEmail = env "CHEZMOI_GIT_EMAIL" -}}
-{{- end -}}
+{{- $gitEmail := printf "%s@users.noreply.github.com" $gitName -}}
 
 [data]
     osid = {{ $osid | quote }}

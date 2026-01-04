@@ -32,13 +32,14 @@ chezmoi init --apply salverius-tech/dotfiles
 
 ### CI/CD / Automated Setup
 
-Set environment variables before running to customize git configuration:
+Set environment variable before running to customize git configuration:
 
 ```bash
-export CHEZMOI_GIT_NAME="Your Name"
-export CHEZMOI_GIT_EMAIL="you@example.com"
+export CHEZMOI_GIT_NAME="salverius"
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply salverius-tech/dotfiles
 ```
+
+This sets git user to `salverius` with email `salverius@users.noreply.github.com`.
 
 ## What's Included
 
