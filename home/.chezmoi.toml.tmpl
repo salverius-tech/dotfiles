@@ -27,11 +27,27 @@
 {{-   $isWsl = true -}}
 {{- end -}}
 
+{{- /* Git configuration with flexible environment variable support:
+       1. Both CHEZMOI_GIT_NAME and CHEZMOI_GIT_EMAIL set: use both values
+       2. Only CHEZMOI_GIT_NAME set: use name, derive email as name@users.noreply.github.com
+       3. Neither set: use defaults (salverius / salverius@users.noreply.github.com)
+       4. Only CHEZMOI_GIT_EMAIL set: use default name, use provided email
+*/ -}}
 {{- $gitName := "salverius" -}}
-{{- if env "CHEZMOI_GIT_NAME" -}}
+{{- $gitEmail := "salverius@users.noreply.github.com" -}}
+{{- if and (env "CHEZMOI_GIT_NAME") (env "CHEZMOI_GIT_EMAIL") -}}
+{{-   /* Case 1: Both set */ -}}
 {{-   $gitName = env "CHEZMOI_GIT_NAME" -}}
+{{-   $gitEmail = env "CHEZMOI_GIT_EMAIL" -}}
+{{- else if env "CHEZMOI_GIT_NAME" -}}
+{{-   /* Case 2: Only name set, derive email */ -}}
+{{-   $gitName = env "CHEZMOI_GIT_NAME" -}}
+{{-   $gitEmail = printf "%s@users.noreply.github.com" $gitName -}}
+{{- else if env "CHEZMOI_GIT_EMAIL" -}}
+{{-   /* Case 4: Only email set, use default name */ -}}
+{{-   $gitEmail = env "CHEZMOI_GIT_EMAIL" -}}
 {{- end -}}
-{{- $gitEmail := printf "%s@users.noreply.github.com" $gitName -}}
+{{- /* Case 3: Neither set - defaults already assigned above */ -}}
 
 [data]
     osid = {{ $osid | quote }}
