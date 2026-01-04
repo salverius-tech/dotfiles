@@ -1,0 +1,3 @@
+# Fix ugly green background on world-writable directories
+# https://unix.stackexchange.com/a/94505/3098
+OTHER_WRITABLE 00;35
