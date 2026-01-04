@@ -15,14 +15,14 @@ Cross-platform dotfiles managed with [chezmoi](https://chezmoi.io).
 ### Linux / macOS
 
 ```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply traefikturkey/dotfiles
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply salverius-tech/dotfiles
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
 winget install twpayne.chezmoi
-chezmoi init --apply traefikturkey/dotfiles
+chemzoi init --apply salverius-tech/dotfiles
 ```
 
 ## What's Included
