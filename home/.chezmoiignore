@@ -7,15 +7,18 @@ dot_dircolors
 {{- end }}
 
 {{- if ne .chezmoi.os "windows" }}
-# Ignore PowerShell profile on non-Windows
+# Ignore PowerShell profile and Windows scripts on non-Windows
 Documents/
+run_once_before_install-packages-windows.ps1.tmpl
 {{- end }}
 
 {{- if eq .chezmoi.os "windows" }}
-# Ignore bash configs on Windows (unless using Git Bash)
+# Ignore bash/zsh configs and Linux scripts on Windows
 dot_bashrc.tmpl
 dot_bash_aliases.tmpl
 dot_bash_profile
+dot_zshrc.tmpl
+dot_zprofile
 run_once_before_install-packages.sh.tmpl
 run_once_install-starship.sh.tmpl
 {{- end }}

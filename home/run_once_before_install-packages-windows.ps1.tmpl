@@ -1,0 +1,22 @@
+# chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
+# Windows package installation script
+
+# {{ if eq .chezmoi.os "windows" }}
+
+Write-Host "Installing packages for Windows..." -ForegroundColor Cyan
+
+# Install Starship prompt
+if (-not (Get-Command starship -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing Starship..." -ForegroundColor Yellow
+    winget install --id Starship.Starship -e --accept-source-agreements --accept-package-agreements
+} else {
+    Write-Host "Starship already installed, skipping..." -ForegroundColor Green
+}
+
+# Install JetBrains Mono Nerd Font
+Write-Host "Installing JetBrains Mono Nerd Font..." -ForegroundColor Yellow
+winget install --id DEVCOM.JetBrainsMonoNerdFont -e --accept-source-agreements --accept-package-agreements
+
+Write-Host "Package installation complete!" -ForegroundColor Green
+
+# {{ end }}
