@@ -1,0 +1,5 @@
+# ~/.zprofile: Zsh login profile
+
+if [ -f ~/.zshrc ]; then 
+    source ~/.zshrc 
+fi

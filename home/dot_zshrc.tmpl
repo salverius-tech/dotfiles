@@ -1,0 +1,97 @@
+# ~/.zshrc: Zsh configuration managed by chezmoi
+
+# Add ~/bin and ~/.local/bin to PATH
+if [ -d "$HOME/bin" ] && [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
+    export PATH="$HOME/bin:$PATH"
+fi
+if [ -d "$HOME/.local/bin" ] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
+# Completion system
+autoload -U compinit && compinit
+
+# Kubernetes alias
+alias kc='kubectl'
+
+# File listing (cross-platform)
+{{- if eq .chezmoi.os "darwin" }}
+alias l='ls -lhaG'
+{{- else }}
+alias l='ls --color -lha --group-directories-first'
+{{- end }}
+
+# Development directory
+{{- if eq .chezmoi.os "windows" }}
+alias cddev='cd /c/dev'
+{{- else }}
+alias cddev='cd /devdata'
+{{- end }}
+
+# Docker aliases
+alias dps='docker ps --format="table {{`{{.Names}}`}}\t{{`{{.ID}}`}}\t{{`{{.Image}}`}}\t{{`{{.RunningFor}}`}}\t{{`{{.State}}`}}\t{{`{{.Status}}`}}"'
+alias dpsp='docker ps --format="table {{`{{.Names}}`}}\t{{`{{.ID}}`}}\t{{`{{.Image}}`}}\t{{`{{.RunningFor}}`}}\t{{`{{.State}}`}}\t{{`{{.Status}}`}}\t{{`{{.Ports}}`}}"'
+
+# Network commands
+{{- if eq .chezmoi.os "linux" }}
+alias ipa='ip -br -c a'
+alias ipn='ip -c n'
+{{- else if eq .chezmoi.os "darwin" }}
+alias ipa='ifconfig | grep inet'
+alias ipn='arp -a'
+{{- end }}
+
+# System update (distro-agnostic)
+{{- if eq .package_manager "apt" }}
+alias update='sudo apt update && sudo apt upgrade -y'
+{{- else if eq .package_manager "apk" }}
+alias update='sudo apk update && sudo apk upgrade'
+{{- else if eq .package_manager "dnf" }}
+alias update='sudo dnf upgrade --refresh -y'
+{{- else if eq .package_manager "pacman" }}
+alias update='sudo pacman -Syu --noconfirm'
+{{- else if eq .package_manager "zypper" }}
+alias update='sudo zypper refresh && sudo zypper update -y'
+{{- else if eq .package_manager "brew" }}
+alias update='brew update && brew upgrade'
+{{- else if eq .package_manager "nix" }}
+alias update='nix-channel --update && nix-env -u'
+{{- end }}
+
+# Shutdown
+{{- if ne .chezmoi.os "windows" }}
+alias sdn='sudo shutdown -h now'
+{{- end }}
+
+# kubectl completion (if available)
+if command -v kubectl &> /dev/null; then
+    source <(kubectl completion zsh)
+fi
+
+# helm completion (if available)
+if command -v helm &> /dev/null; then
+    source <(helm completion zsh)
+fi
+
+# Make autocompletion
+zstyle ':completion:*:*:make:*' tag-order 'targets'
+
+# Prompt substitution for git branch
+setopt PROMPT_SUBST
+
+# Starship prompt (if available)
+export STARSHIP_CONFIG=~/.config/starship.toml
+if command -v starship &> /dev/null; then
+    eval "$(starship init zsh)"
+else
+    # Fallback prompt with git branch
+    _git_branch() {
+        local ref=$(git symbolic-ref --short HEAD 2> /dev/null)
+        if [ -n "${ref}" ]; then
+            echo "%F{yellow}[%f%F{red}${ref}%f%F{yellow}]%f"
+        else
+            echo ""
+        fi
+    }
+    PS1='%F{green}%M%f:%F{cyan}%~$(_git_branch)$ '
+fi
