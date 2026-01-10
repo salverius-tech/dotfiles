@@ -6,9 +6,11 @@ Set-Alias -Name kc -Value kubectl
 function l { Get-ChildItem -Force @args }
 function cddev { Set-Location C:\dev }
 
-# Docker aliases
-function dps { docker ps --format="table {{`{{.Names}}`}}`t{{`{{.ID}}`}}`t{{`{{.Image}}`}}`t{{`{{.RunningFor}}`}}`t{{`{{.State}}`}}`t{{`{{.Status}}`}}" }
-function dpsp { docker ps --format="table {{`{{.Names}}`}}`t{{`{{.ID}}`}}`t{{`{{.Image}}`}}`t{{`{{.RunningFor}}`}}`t{{`{{.State}}`}}`t{{`{{.Status}}`}}`t{{`{{.Ports}}`}}" }
+# Docker aliases (only if docker is installed)
+if (Get-Command docker -ErrorAction SilentlyContinue) {
+    function dps { docker ps --format="table {{`{{.Names}}`}}`t{{`{{.ID}}`}}`t{{`{{.Image}}`}}`t{{`{{.RunningFor}}`}}`t{{`{{.State}}`}}`t{{`{{.Status}}`}}" }
+    function dpsp { docker ps --format="table {{`{{.Names}}`}}`t{{`{{.ID}}`}}`t{{`{{.Image}}`}}`t{{`{{.RunningFor}}`}}`t{{`{{.State}}`}}`t{{`{{.Status}}`}}`t{{`{{.Ports}}`}}" }
+}
 
 # Network
 function ipa { Get-NetIPAddress | Where-Object { $_.AddressFamily -eq 'IPv4' } | Format-Table InterfaceAlias, IPAddress }

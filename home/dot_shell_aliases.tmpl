@@ -18,10 +18,6 @@ alias cddev='cd /c/dev'
 alias cddev='cd /devdata'
 {{- end }}
 
-# Docker aliases
-alias dps=$'docker ps --format="table {{`{{.Names}}`}}\t{{`{{.ID}}`}}\t{{`{{.Image}}`}}\t{{`{{.RunningFor}}`}}\t{{`{{.State}}`}}\t{{`{{.Status}}`}}"'
-alias dpsp=$'docker ps --format="table {{`{{.Names}}`}}\t{{`{{.ID}}`}}\t{{`{{.Image}}`}}\t{{`{{.RunningFor}}`}}\t{{`{{.State}}`}}\t{{`{{.Status}}`}}\t{{`{{.Ports}}`}}"'
-
 # Network commands
 {{- if eq .chezmoi.os "linux" }}
 alias ipa='ip -br -c a'
@@ -59,3 +55,8 @@ alias explorer='explorer.exe .'
 alias clip='clip.exe'
 alias open='wslview'
 {{- end }}
+
+# Docker aliases (loaded if docker is installed)
+if [ -f ~/.docker_aliases ]; then
+    . ~/.docker_aliases
+fi
