@@ -49,7 +49,6 @@ This sets git user to `salverius` with email `salverius@users.noreply.github.com
 - **Git configuration** - Aliases, auto-rebase, OS-specific credential helpers
 - **Global gitignore** - Common patterns (.DS_Store, node_modules/, etc.)
 - **PowerShell profile** - Windows-equivalent aliases and Starship
-- **Docker aliases** - Conditionally loaded only if Docker is installed
 
 ### Packages Installed
 
