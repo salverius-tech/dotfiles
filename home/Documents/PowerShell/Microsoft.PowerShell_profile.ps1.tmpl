@@ -8,8 +8,52 @@ function cddev { Set-Location C:\dev }
 
 # Docker aliases (only if docker is installed)
 if (Get-Command docker -ErrorAction SilentlyContinue) {
+    # Container Listing
     function dps { docker ps --format="table {{`{{.Names}}`}}`t{{`{{.ID}}`}}`t{{`{{.Image}}`}}`t{{`{{.RunningFor}}`}}`t{{`{{.State}}`}}`t{{`{{.Status}}`}}" }
     function dpsp { docker ps --format="table {{`{{.Names}}`}}`t{{`{{.ID}}`}}`t{{`{{.Image}}`}}`t{{`{{.RunningFor}}`}}`t{{`{{.State}}`}}`t{{`{{.Status}}`}}`t{{`{{.Ports}}`}}" }
+    function dpsa { docker ps -a @args }
+
+    # Docker Compose
+    function dc { docker compose @args }
+    function dcu { docker compose up -d @args }
+    function dcd { docker compose down @args }
+    function dcl { docker compose logs -f @args }
+    function dcr { docker compose restart @args }
+    function dcp { docker compose pull @args }
+    function dcb { docker compose build @args }
+    function dce { docker compose exec @args }
+    function dcps { docker compose ps @args }
+    function dcconf { docker compose config @args }
+
+    # Container Operations
+    function dlog { docker logs -f @args }
+    function dlast { docker logs --tail 100 @args }
+    function dexec { docker exec -it @args }
+    function dstop { docker stop @args }
+    function drm { docker rm @args }
+
+    # Inspection
+    function dins { docker inspect @args }
+    function dip { docker inspect -f '{{`{{range.NetworkSettings.Networks}}`}}{{`{{.IPAddress}}`}}{{`{{end}}`}}' @args }
+    function dtop { docker stats --no-stream @args }
+    function dwatch { docker stats @args }
+
+    # Images
+    function di { docker images @args }
+    function drmi { docker rmi @args }
+    function dpull { docker pull @args }
+
+    # Network & Volumes
+    function dnet { docker network ls @args }
+    function dvol { docker volume ls @args }
+
+    # Cleanup
+    function docker-prune { docker system prune -f @args }
+    function docker-prune-all { docker system prune -af --volumes @args }
+
+    # Shell into container
+    function dsh { docker exec -it $args[0] /bin/sh }
+    function dbash { docker exec -it $args[0] /bin/bash }
 }
 
 # Network
