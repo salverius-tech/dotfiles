@@ -56,7 +56,9 @@ alias clip='clip.exe'
 alias open='wslview'
 {{- end }}
 
-# Docker aliases (loaded if docker is installed)
+# Docker aliases (loaded if docker is installed and file exists)
+# Note: chezmoi ignores this file if docker is not found at install time,
+# but we still check at runtime for robustness
 if [ -f ~/.docker_aliases ]; then
     . ~/.docker_aliases
 fi
