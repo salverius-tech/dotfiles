@@ -105,6 +105,11 @@ if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
 fi
 
+# Load docker aliases if docker is installed
+if command -v docker &> /dev/null; then
+    [ -f ~/.bash_docker_aliases ] && . ~/.bash_docker_aliases
+fi
+
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
 # sources /etc/bash.bashrc).
