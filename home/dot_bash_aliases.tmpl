@@ -1,60 +1,9 @@
-# Kubernetes
-alias kc='kubectl'
+# Bash-specific aliases
+# Common aliases are in ~/.shell_aliases
 
-# File listing (cross-platform)
-{{- if eq .chezmoi.os "darwin" }}
-alias l='ls -lhaG'
-{{- else }}
-alias l='ls --color -lha --group-directories-first'
-{{- end }}
+# Source shared aliases
+if [ -f ~/.shell_aliases ]; then
+    . ~/.shell_aliases
+fi
 
-# Development directory
-{{- if eq .chezmoi.os "windows" }}
-alias cddev='cd /c/dev'
-{{- else }}
-alias cddev='cd /devdata'
-{{- end }}
-
-# Docker
-alias dps='docker ps --format="table {{`{{.Names}}`}}\t{{`{{.ID}}`}}\t{{`{{.Image}}`}}\t{{`{{.RunningFor}}`}}\t{{`{{.State}}`}}\t{{`{{.Status}}`}}"'
-alias dpsp='docker ps --format="table {{`{{.Names}}`}}\t{{`{{.ID}}`}}\t{{`{{.Image}}`}}\t{{`{{.RunningFor}}`}}\t{{`{{.State}}`}}\t{{`{{.Status}}`}}\t{{`{{.Ports}}`}}"'
-
-# Network commands
-{{- if eq .chezmoi.os "linux" }}
-alias ipa='ip -br -c a'
-alias ipn='ip -c n'
-{{- else if eq .chezmoi.os "darwin" }}
-alias ipa='ifconfig | grep inet'
-alias ipn='arp -a'
-{{- end }}
-
-# System update (distro-agnostic)
-{{- if eq .package_manager "apt" }}
-alias update='sudo apt update && sudo apt upgrade -y'
-{{- else if eq .package_manager "apk" }}
-alias update='sudo apk update && sudo apk upgrade'
-{{- else if eq .package_manager "dnf" }}
-alias update='sudo dnf upgrade --refresh -y'
-{{- else if eq .package_manager "pacman" }}
-alias update='sudo pacman -Syu --noconfirm'
-{{- else if eq .package_manager "zypper" }}
-alias update='sudo zypper refresh && sudo zypper update -y'
-{{- else if eq .package_manager "brew" }}
-alias update='brew update && brew upgrade'
-{{- else if eq .package_manager "nix" }}
-alias update='nix-channel --update && nix-env -u'
-{{- end }}
-
-# Shutdown
-{{- if eq .chezmoi.os "linux" }}
-alias sdn='sudo shutdown -h now'
-{{- else if eq .chezmoi.os "darwin" }}
-alias sdn='sudo shutdown -h now'
-{{- end }}
-
-# WSL-specific aliases
-{{- if .is_wsl }}
-alias explorer='explorer.exe .'
-alias clip='clip.exe'
-alias open='wslview'
-{{- end }}
+# Add any bash-specific aliases below this line
