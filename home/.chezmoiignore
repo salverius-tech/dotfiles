@@ -1,6 +1,11 @@
 README.md
 LICENSE
 
+{{- if not (lookPath "docker") }}
+# Ignore docker aliases if docker is not installed
+.docker_aliases
+{{- end }}
+
 {{- if ne .chezmoi.os "linux" }}
 # dircolors is Linux-only (BSD ls on macOS doesn't use it)
 dot_dircolors
