@@ -106,7 +106,7 @@ if [ -f ~/.bash_aliases ]; then
 fi
 
 # Load docker aliases if docker is installed
-if command -v docker &> /dev/null; then
+if command -v docker > /dev/null 2>&1; then
     [ -f ~/.bash_docker_aliases ] && . ~/.bash_docker_aliases
 fi
 
