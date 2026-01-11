@@ -57,18 +57,18 @@
     
     git_status = {
         style = "#4863A0";
-        format = "(\b[ ](bg:$style fg:black)$conflicted$staged$modified$renamed$deleted$untracked$stashed$ahead_behind$up_to_date[](fg:$style))";
-        conflicted = "[ $count](#FF79C6 bg:#4863A0)";
-        staged = "[● $count](#50FA7B bg:#4863A0)";
-        modified = "[✚ $count](#FFB86C bg:#4863A0)";
-        renamed = "[➜ $count](#8BE9FD bg:#4863A0)";
-        deleted = "[✖ $count](#FF5555 bg:#4863A0)";
-        untracked = "[… $count](#6272A4 bg:#4863A0)";
-        stashed = "[ $count](#F1FA8C bg:#4863A0)";
-        ahead = "[⇡ $count](cyan bg:#4863A0)";
-        behind = "[⇣ $count](#FF6E6E bg:#4863A0)";
-        diverged = "[⇕](magenta bg:#4863A0) [⇡ $ahead_count](cyan bg:#4863A0)[⇣ $behind_count](#FF6E6E bg:#4863A0)";
-        up_to_date = "[✔ ](#98C379 bg:#4863A0)";
+        format = "(\b[ ](bg:$style fg:black)$conflicted$staged$modified$renamed$deleted$untracked$stashed$ahead_behind$up_to_date[](fg:$style))";
+        conflicted = "[ $count ](fg:#FF79C6 bg:#4863A0)";
+        staged = "[● $count ](fg:#50FA7B bg:#4863A0)";
+        modified = "[✚ $count ](fg:#FFB86C bg:#4863A0)";
+        renamed = "[➜ $count ](fg:#8BE9FD bg:#4863A0)";
+        deleted = "[✖ $count ](fg:#FF5555 bg:#4863A0)";
+        untracked = "[… $count ](fg:#6272A4 bg:#4863A0)";
+        stashed = "[ $count ](fg:#F1FA8C bg:#4863A0)";
+        ahead = "[⇡ $count ](fg:cyan bg:#4863A0)";
+        behind = "[⇣ $count ](fg:#FF6E6E bg:#4863A0)";
+        diverged = "[⇕ ](fg:magenta bg:#4863A0)[⇡ $ahead_count ](fg:cyan bg:#4863A0)[⇣ $behind_count ](fg:#FF6E6E bg:#4863A0)";
+        up_to_date = "[✔ ](fg:#98C379 bg:#4863A0)";
     };    
 
     hostname = {
