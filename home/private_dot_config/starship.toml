@@ -55,7 +55,7 @@ format = "\b[ ](bg:$style)[ \\($state( $progress_current/$progress_total)\\)](fg
 [git_status]
 style = "#4863A0"
 format = "(\b[ ](bg:$style fg:black)$conflicted$staged$modified$renamed$deleted$untracked$stashed$ahead_behind[](fg:$style))"
-conflicted = "[⚔️] ](bold fg:88 bg:#4863A0)[  ${count} ](fg:black bg:#4863A0)"
+conflicted = "[⚔️](bold fg:88 bg:#4863A0)[ ${count} ](fg:black bg:#4863A0)"
 staged = "[🗃️ $count ](fg:black bg:#4863A0)"
 modified = "[📝 ${count} ](fg:black bg:#4863A0)"
 renamed = "[📛 ${count} ](fg:black bg:#4863A0)"
