@@ -68,8 +68,7 @@
         ahead = "[⇡ $count](cyan bg:#4863A0)";
         behind = "[⇣ $count](#FF6E6E bg:#4863A0)";
         diverged = "[⇕](magenta bg:#4863A0) [⇡ $ahead_count](cyan bg:#4863A0)[⇣ $behind_count](#FF6E6E bg:#4863A0)";
-        up_to_date = "[✔](#98C379 bg:#4863A0)";
-        copied = "[≡ $count](#8BE9FD bg:#4863A0)";
+        up_to_date = "[✔ ](#98C379 bg:#4863A0)";
     };    
 
     hostname = {
