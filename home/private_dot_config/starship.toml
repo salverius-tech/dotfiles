@@ -54,7 +54,7 @@ format = "\b[ ](bg:$style)[ \\($state( $progress_current/$progress_total)\\)](fg
 
 [git_status]
 style = "#4863A0"
-format = "(\b[ ](bg:$style fg:black)$conflicted$staged$modified$renamed$deleted$untracked$stashed$ahead_behind$up_to_date[](fg:$style))"
+format = "([](fg:black bg:$style)[ ](bg:$style fg:black)$conflicted$staged$modified$renamed$deleted$untracked$stashed$ahead_behind$up_to_date[](fg:$style))"
 conflicted = "[ ${count}](#FF79C6 bg:#4863A0)"
 staged = "[● ${count}](#50FA7B bg:#4863A0)"
 modified = "[✚ ${count}](#FFB86C bg:#4863A0)"
@@ -65,8 +65,7 @@ stashed = "[ ${count}](#F1FA8C bg:#4863A0)"
 ahead = "[⇡ ${count}](cyan bg:#4863A0)"
 behind = "[⇣ ${count}](#FF6E6E bg:#4863A0)"
 diverged = "[⇕](magenta bg:#4863A0) [⇡ ${ahead_count}](cyan bg:#4863A0)[⇣ ${behind_count}](#FF6E6E bg:#4863A0)"
-up_to_date = "[✔](#98C379 bg:#4863A0)"
-copied = "[≡ ${count}](#8BE9FD bg:#4863A0)"
+up_to_date = "[✔ ](#98C379 bg:#4863A0)"
 
 [golang]
 symbol = "ﳑ "
