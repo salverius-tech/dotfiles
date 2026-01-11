@@ -40,40 +40,40 @@
     git_branch = {
       only_attached = true;
       # symbol = "שׂ";
-      style = "#d8712c";
+      style = "#4863A0";
       format = "[](fg:black bg:$style)[ $symbol$branch](fg:black bg:$style)[](fg:$style)";
     };
     
     git_commit = {
       only_detached = true;
-      style = "#d8712c";
+      style = "#4863A0";
       format = "\b[ ](bg:$style)[\\($hash$tag\\)](fg:black bg:$style)[](fg:$style)";
     };
     
     git_state = {
-      style = "#d8712c";
+      style = "#4863A0";
       format = "\b[ ](bg:$style)[ \\($state( $progress_current/$progress_total)\\)](fg:black bg:$style)[](fg:$style)";
     };
     
     git_status = {
-        style = "#d8712c";
+        style = "#4863A0";
         format = "(\b[ ](bg:$style fg:black)$conflicted$staged$modified$renamed$deleted$untracked$stashed$ahead_behind$up_to_date[](fg:$style))";
-        conflicted = "[❌💥 $count ](bold fg:88 bg:#d8712c)";
-        staged = "[✅ $count ](fg:black bg:#d8712c)";
-        modified = "[✏️ $count ](fg:black bg:#d8712c)";
-        renamed = "[➡️ $count ](fg:black bg:#d8712c)";
-        deleted = "[🔴 $count ](fg:black bg:#d8712c)";
-        untracked = "[❓ $count ](fg:black bg:#d8712c)";
-        stashed = "[📥 $count ](fg:black bg:#d8712c)";
-        ahead = "[⬆️ $count ](fg:black bg:#d8712c)";
-        behind = "[⬇️ $count ](fg:black bg:#d8712c)";
-        diverged = "[🔀 ⬆️ $ahead_count ⬇️ $behind_count ](fg:black bg:#d8712c)";
-        up_to_date = "[🟢](fg:black bg:#d8712c)";
-        copied = "[📋 $count ](fg:black bg:#d8712c)";
+        conflicted = "[ $count](#FF79C6 bg:#4863A0)";
+        staged = "[● $count](#50FA7B bg:#4863A0)";
+        modified = "[✚ $count](#FFB86C bg:#4863A0)";
+        renamed = "[➜ $count](#8BE9FD bg:#4863A0)";
+        deleted = "[✖ $count](#FF5555 bg:#4863A0)";
+        untracked = "[… $count](#6272A4 bg:#4863A0)";
+        stashed = "[ $count](#F1FA8C bg:#4863A0)";
+        ahead = "[⇡ $count](cyan bg:#4863A0)";
+        behind = "[⇣ $count](#FF6E6E bg:#4863A0)";
+        diverged = "[⇕](magenta bg:#4863A0) [⇡ $ahead_count](cyan bg:#4863A0)[⇣ $behind_count](#FF6E6E bg:#4863A0)";
+        up_to_date = "[✔](#98C379 bg:#4863A0)";
+        copied = "[≡ $count](#8BE9FD bg:#4863A0)";
     };    
 
     hostname = {
-      style = "bright-green bold";
+      style = "#0370C0";
       ssh_only = true;
     };
        
