@@ -57,17 +57,19 @@
     
     git_status = {
         style = "#d8712c";
-        conflicted = "🏳(fg:black bg:#d8712c)";
-        ahead = "🏎💨 \($ahead_count\)(fg:black bg:#d8712c)";
-        behind = "😰🚌 \($behind_count\)(fg:black bg:#d8712c)";
-        diverged = "😵 \($ahead_count\) \($behind_count\)(fg:black bg:#d8712c)";
-        up_to_date = "✓(fg:black bg:#d8712c)";
-        untracked = "🤷‍ \($untracked\)(fg:black bg:#d8712c)";
-        stashed = "📦 \($stashed\)(fg:black bg:#d8712c)";
-        modified = "📝 \($staged\) \($unstaged\)(fg:black bg:#d8712c)";
-        deleted = "🗑 \($deleted\)(fg:black bg:#d8712c)";
-        renamed = "📤 \($renamed\)(fg:black bg:#d8712c)";
-        copied = "📋 \($copied\)(fg:black bg:#d8712c)";      
+        format = "(\b[ ](bg:$style fg:black)$conflicted$staged$modified$renamed$deleted$untracked$stashed$ahead_behind$up_to_date[](fg:$style))";
+        conflicted = "[❌💥 $count ](bold fg:88 bg:#d8712c)";
+        staged = "[✅ $count ](fg:black bg:#d8712c)";
+        modified = "[✏️ $count ](fg:black bg:#d8712c)";
+        renamed = "[➡️ $count ](fg:black bg:#d8712c)";
+        deleted = "[🔴 $count ](fg:black bg:#d8712c)";
+        untracked = "[❓ $count ](fg:black bg:#d8712c)";
+        stashed = "[📥 $count ](fg:black bg:#d8712c)";
+        ahead = "[⬆️ $count ](fg:black bg:#d8712c)";
+        behind = "[⬇️ $count ](fg:black bg:#d8712c)";
+        diverged = "[🔀 ⬆️ $ahead_count ⬇️ $behind_count ](fg:black bg:#d8712c)";
+        up_to_date = "[🟢](fg:black bg:#d8712c)";
+        copied = "[📋 $count ](fg:black bg:#d8712c)";
     };    
 
     hostname = {
