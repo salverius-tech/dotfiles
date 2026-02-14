@@ -69,9 +69,19 @@ if (Get-Command bun -ErrorAction SilentlyContinue) {
 # Install recommended VS Code extensions
 Write-Host "Checking VS Code extensions..." -ForegroundColor Cyan
 $extensions = @(
-    "usernamehw.errorlens",           # Inline error highlighting
-    "2gua.rainbow-brackets",          # Bracket pair colorization  
-    "christian-kohler.path-intellisense" # Autocomplete filenames
+    "usernamehw.errorlens",             # Inline error highlighting
+    "christian-kohler.path-intellisense", # Autocomplete filenames
+    "esbenp.prettier-vscode",           # Code formatting (JavaScript, TypeScript, HTML, CSS, JSON)
+    "vscode-icons-team.vscode-icons",   # File icons
+    "eamodio.gitlens",                  # Git supercharged
+    "ms-azuretools.vscode-docker",      # Docker integration
+    "ms-python.python",                 # Python support
+    "ms-vscode.powershell",             # PowerShell support
+    "yzhang.markdown-all-in-one",       # Markdown tools
+    "redhat.vscode-yaml",               # YAML support
+    "ms-vscode-remote.remote-ssh",      # Remote SSH
+    "ms-vscode-remote.remote-wsl",      # Remote WSL
+    "ms-vscode-remote.remote-containers" # Dev Containers
 )
 
 foreach ($ext in $extensions) {
