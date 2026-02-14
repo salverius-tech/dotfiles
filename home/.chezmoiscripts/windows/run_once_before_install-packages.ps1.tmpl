@@ -11,6 +11,14 @@ if (-not (Get-Command starship -ErrorAction SilentlyContinue)) {
     Write-Host "Starship already installed, skipping..." -ForegroundColor Green
 }
 
+# Install Visual Studio Code
+if (-not (Get-Command code -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing Visual Studio Code..." -ForegroundColor Yellow
+    winget install --id Microsoft.VisualStudioCode -e --accept-source-agreements --accept-package-agreements --silent
+} else {
+    Write-Host "Visual Studio Code already installed, skipping..." -ForegroundColor Green
+}
+
 # Install JetBrains Mono Nerd Font
 Write-Host "Installing JetBrains Mono Nerd Font..." -ForegroundColor Yellow
 winget install --id DEVCOM.JetBrainsMonoNerdFont -e --accept-source-agreements --accept-package-agreements --silent
