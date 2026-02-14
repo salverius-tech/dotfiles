@@ -39,5 +39,5 @@
 {{- end }}
 
 [user]
-    name = {{ .git_name }}
-    email = {{ .git_email }}
+    name = {{ .git_name | default "salverius" }}
+    email = {{ .git_email | default "salverius@users.noreply.github.com" }}
