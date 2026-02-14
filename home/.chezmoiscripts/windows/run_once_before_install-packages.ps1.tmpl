@@ -6,14 +6,14 @@ Write-Host "Installing packages for Windows..." -ForegroundColor Cyan
 # Install Starship prompt
 if (-not (Get-Command starship -ErrorAction SilentlyContinue)) {
     Write-Host "Installing Starship..." -ForegroundColor Yellow
-    winget install --id Starship.Starship -e --accept-source-agreements --accept-package-agreements
+    winget install --id Starship.Starship -e --accept-source-agreements --accept-package-agreements --silent
 } else {
     Write-Host "Starship already installed, skipping..." -ForegroundColor Green
 }
 
 # Install JetBrains Mono Nerd Font
 Write-Host "Installing JetBrains Mono Nerd Font..." -ForegroundColor Yellow
-winget install --id DEVCOM.JetBrainsMonoNerdFont -e --accept-source-agreements --accept-package-agreements
+winget install --id DEVCOM.JetBrainsMonoNerdFont -e --accept-source-agreements --accept-package-agreements --silent
 
 # Install Bun (JavaScript runtime required for opencode on Windows)
 Write-Host "Checking for Bun installation..." -ForegroundColor Cyan
