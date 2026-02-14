@@ -1,0 +1,41 @@
+# Create junction to unify PowerShell profile locations
+# PowerShell 7+ uses Documents\PowerShell\
+# Windows PowerShell 5.1 uses Documents\WindowsPowerShell\
+# This creates a junction so both use the same profile
+
+# Determine the actual Documents folder path (handles OneDrive redirection)
+$documentsPath = [Environment]::GetFolderPath('MyDocuments')
+
+# Source: Where chezmoi places the profile (local Documents)
+$sourcePath = Join-Path $env:USERPROFILE 'Documents\PowerShell'
+
+# Target: Where PowerShell actually looks (could be OneDrive)
+$targetPath = Join-Path $documentsPath 'WindowsPowerShell'
+
+# Ensure source directory exists
+if (-not (Test-Path $sourcePath)) {
+    New-Item -ItemType Directory -Path $sourcePath -Force | Out-Null
+}
+
+# Handle target path
+if (Test-Path $targetPath) {
+    $item = Get-Item $targetPath -ErrorAction SilentlyContinue
+    if ($item.LinkType -eq 'Junction') {
+        $existingTarget = $item.Target
+        if ($existingTarget -eq $sourcePath) {
+            Write-Host "PowerShell profile junction already configured correctly." -ForegroundColor Green
+            exit 0
+        }
+        # Remove incorrect junction
+        Remove-Item $targetPath -Force
+    } else {
+        # Real directory exists - rename it as backup
+        $backupPath = "$targetPath.backup.$(Get-Date -Format 'yyyyMMddHHmmss')"
+        Rename-Item $targetPath $backupPath
+        Write-Host "Backed up existing WindowsPowerShell folder to: $backupPath" -ForegroundColor Yellow
+    }
+}
+
+# Create the junction
+New-Item -ItemType Junction -Path $targetPath -Target $sourcePath -Force | Out-Null
+Write-Host "Created PowerShell profile junction: $targetPath -> $sourcePath" -ForegroundColor Green

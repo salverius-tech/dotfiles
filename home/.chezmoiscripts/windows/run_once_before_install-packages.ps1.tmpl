@@ -3,6 +3,17 @@
 
 Write-Host "Installing packages for Windows..." -ForegroundColor Cyan
 
+# Check PowerShell execution policy
+$currentPolicy = Get-ExecutionPolicy -Scope CurrentUser
+if ($currentPolicy -eq 'Restricted' -or $currentPolicy -eq 'AllSigned') {
+    Write-Host "WARNING: PowerShell execution policy is set to '$currentPolicy'" -ForegroundColor Red
+    Write-Host "This will prevent your PowerShell profile from loading." -ForegroundColor Yellow
+    Write-Host "To fix this, run PowerShell as Administrator and execute:" -ForegroundColor Cyan
+    Write-Host "  Set-ExecutionPolicy RemoteSigned -Scope LocalMachine" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Continuing with package installation anyway..." -ForegroundColor Yellow
+}
+
 # Install Starship prompt
 if (-not (Get-Command starship -ErrorAction SilentlyContinue)) {
     Write-Host "Installing Starship..." -ForegroundColor Yellow

@@ -6,9 +6,15 @@
 if (Get-Module -ListAvailable -Name PSReadLine) {
     Import-Module PSReadLine
     
-    # Enable predictive IntelliSense (fish-style auto-suggestions)
-    Set-PSReadLineOption -PredictionSource History
-    Set-PSReadLineOption -PredictionViewStyle ListView
+    # Predictive IntelliSense only available in PowerShell 7+ (PSReadLine 2.1+)
+    if ($PSVersionTable.PSVersion.Major -ge 7) {
+        try {
+            Set-PSReadLineOption -PredictionSource History
+            Set-PSReadLineOption -PredictionViewStyle ListView
+        } catch {
+            # Predictive features not available in this version
+        }
+    }
     
     # Better colors for syntax highlighting
     Set-PSReadLineOption -Colors @{
