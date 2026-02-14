@@ -127,7 +127,7 @@ if (Test-Path $sshDir) {
 Set-Alias -Name kc -Value kubectl
 
 function l { Get-ChildItem -Force @args }
-function cddev { Set-Location C:\dev }
+function cddev { Set-Location $env:USERPROFILE\dev }
 
 # Docker aliases (only if docker is installed)
 if (Get-Command docker -ErrorAction SilentlyContinue) {
