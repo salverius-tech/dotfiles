@@ -4,7 +4,7 @@
 set -e
 
 # {{ $pm := "unknown" }}
-# {{ if hasKey . "package_manager" }}{{ $pm = .package_manager }}{{ end }}
+# {{ if hasKey . "package_manager" }}# {{ $pm = .package_manager }}# {{ end }}
 
 echo "Installing packages for # {{ $pm }}..."
 
