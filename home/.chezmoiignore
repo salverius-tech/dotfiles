@@ -26,4 +26,6 @@ AppData/Roaming/Code/
 run_once_before_install-packages.sh
 run_once_install-starship.sh
 run_once_install-opencode.sh
+# Safely ignore all shell scripts on Windows to prevent execution errors
+**/*.sh
 {{- end }}
