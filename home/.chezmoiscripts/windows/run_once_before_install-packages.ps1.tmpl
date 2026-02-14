@@ -15,4 +15,76 @@ if (-not (Get-Command starship -ErrorAction SilentlyContinue)) {
 Write-Host "Installing JetBrains Mono Nerd Font..." -ForegroundColor Yellow
 winget install --id DEVCOM.JetBrainsMonoNerdFont -e --accept-source-agreements --accept-package-agreements
 
+# Install Bun (JavaScript runtime required for opencode on Windows)
+Write-Host "Checking for Bun installation..." -ForegroundColor Cyan
+if (-not (Get-Command bun -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing Bun..." -ForegroundColor Yellow
+    try {
+        # Check Windows version (Bun requires Windows 10 1809+ / build 17763)
+        $WinVer = [System.Environment]::OSVersion.Version
+        $MinBuild = 17763
+        if ($WinVer.Major -lt 10 -or ($WinVer.Major -eq 10 -and $WinVer.Build -lt $MinBuild)) {
+            Write-Warning "Bun requires Windows 10 version 1809 or newer. Skipping Bun installation."
+        } else {
+            # Use official Bun install script
+            powershell -c "irm bun.sh/install.ps1 | iex"
+            # Add Bun to PATH for current session
+            $env:PATH = "$env:USERPROFILE\.bun\bin;$env:PATH"
+            Write-Host "Bun installed successfully" -ForegroundColor Green
+        }
+    } catch {
+        Write-Warning "Failed to install Bun: $_"
+    }
+} else {
+    Write-Host "Bun already installed, skipping..." -ForegroundColor Green
+}
+
+# Install opencode using Bun
+Write-Host "Checking for opencode installation..." -ForegroundColor Cyan
+if (Get-Command bun -ErrorAction SilentlyContinue) {
+    if (-not (Get-Command opencode -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing opencode via Bun..." -ForegroundColor Yellow
+        try {
+            bun add -g opencode-ai
+            Write-Host "opencode installed successfully" -ForegroundColor Green
+            Write-Host "Run 'opencode' to start the AI assistant" -ForegroundColor Cyan
+        } catch {
+            Write-Warning "Failed to install opencode via Bun: $_"
+        }
+    } else {
+        Write-Host "opencode already installed, skipping..." -ForegroundColor Green
+    }
+} else {
+    Write-Warning "Bun not available, skipping opencode installation"
+}
+
+# Install recommended VS Code extensions
+Write-Host "Checking VS Code extensions..." -ForegroundColor Cyan
+$extensions = @(
+    "usernamehw.errorlens",           # Inline error highlighting
+    "2gua.rainbow-brackets",          # Bracket pair colorization  
+    "christian-kohler.path-intellisense" # Autocomplete filenames
+)
+
+foreach ($ext in $extensions) {
+    try {
+        $installed = code --list-extensions 2>$null | Select-String $ext
+        if (-not $installed) {
+            Write-Host "Installing VS Code extension: $ext" -ForegroundColor Yellow
+            code --install-extension $ext --force 2>$null
+            Write-Host "Installed $ext" -ForegroundColor Green
+        } else {
+            Write-Host "$ext already installed" -ForegroundColor Green
+        }
+    } catch {
+        Write-Warning "Could not install extension $ext : $_"
+    }
+}
+
 Write-Host "Package installation complete!" -ForegroundColor Green
+Write-Host "" -ForegroundColor White
+Write-Host "Post-setup actions required:" -ForegroundColor Cyan
+Write-Host "  1. Restart Windows Terminal to load new settings" -ForegroundColor White
+Write-Host "  2. Restart VS Code to apply settings" -ForegroundColor White
+Write-Host "  3. Restart Docker Desktop for 4GB RAM config" -ForegroundColor White
+Write-Host "  4. Run 'wsl --shutdown' and reopen WSL" -ForegroundColor White

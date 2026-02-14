@@ -1,5 +1,121 @@
 # PowerShell Profile - managed by chezmoi
 
+# ============================================
+# PSReadLine Configuration
+# ============================================
+if (Get-Module -ListAvailable -Name PSReadLine) {
+    Import-Module PSReadLine
+    
+    # Enable predictive IntelliSense (fish-style auto-suggestions)
+    Set-PSReadLineOption -PredictionSource History
+    Set-PSReadLineOption -PredictionViewStyle ListView
+    
+    # Better colors for syntax highlighting
+    Set-PSReadLineOption -Colors @{
+        Command = 'Cyan'
+        Parameter = 'DarkCyan'
+        Type = 'DarkYellow'
+        Variable = 'Green'
+        String = 'DarkGreen'
+        Operator = 'DarkGray'
+        Number = 'DarkBlue'
+    }
+    
+    # Key bindings
+    Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+    Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
+    Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
+    Set-PSReadLineKeyHandler -Chord 'Ctrl+d' -Function DeleteChar
+    Set-PSReadLineKeyHandler -Chord 'Ctrl+w' -Function BackwardKillWord
+}
+
+# ============================================
+# Cross-Platform Commands
+# ============================================
+
+# which equivalent
+function which($name) {
+    Get-Command $name -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+}
+
+# pbcopy/pbpaste (macOS-like)
+function pbcopy {
+    $input | clip.exe
+}
+
+function pbpaste {
+    Get-Clipboard
+}
+
+# touch (create empty file)
+function touch($file) {
+    if (Test-Path $file) {
+        (Get-Item $file).LastWriteTime = Get-Date
+    } else {
+        New-Item -ItemType File -Path $file | Out-Null
+    }
+}
+
+# open (like macOS)
+function open($path = '.') {
+    Invoke-Item $path
+}
+
+# ============================================
+# Smart cd with history
+# ============================================
+$global:cdHistory = @{}
+
+function cd {
+    param([string]$path = '')
+    
+    if ([string]::IsNullOrEmpty($path)) {
+        Set-Location ~
+    } elseif ($path -eq '-') {
+        # Go to previous directory
+        if ($global:cdHistory.ContainsKey('prev')) {
+            Set-Location $global:cdHistory['prev']
+        }
+    } else {
+        # Store current before changing
+        $global:cdHistory['prev'] = Get-Location
+        
+        # Try to resolve path
+        $resolved = Resolve-Path $path -ErrorAction SilentlyContinue
+        if ($resolved) {
+            Set-Location $resolved
+        } else {
+            # Try partial match
+            $matches = Get-ChildItem -Directory | Where-Object { $_.Name -like "*$path*" }
+            if ($matches.Count -eq 1) {
+                Set-Location $matches[0]
+            } else {
+                Set-Location $path
+            }
+        }
+    }
+}
+
+# ============================================
+# SSH Agent (Windows OpenSSH)
+# ============================================
+$sshAgent = Get-Service -Name ssh-agent -ErrorAction SilentlyContinue
+if ($sshAgent -and $sshAgent.Status -ne 'Running') {
+    Start-Service ssh-agent
+}
+
+# Add keys automatically
+$sshDir = Join-Path $env:USERPROFILE '.ssh'
+if (Test-Path $sshDir) {
+    Get-ChildItem $sshDir -Filter 'id_*' -Exclude '*.pub' | ForEach-Object {
+        ssh-add $_.FullName 2>$null
+    }
+}
+
+# ============================================
+# Original Aliases and Functions
+# ============================================
+
 # Aliases matching bash config
 Set-Alias -Name kc -Value kubectl
 
@@ -63,7 +179,31 @@ function ipn { Get-NetNeighbor | Format-Table }
 # Update alias
 function update { winget upgrade --all --include-unknown }
 
-# Initialize Starship if installed
+# ============================================
+# Docker Status in Prompt (when Starship unavailable)
+# ============================================
+function Get-DockerStatus {
+    if (Get-Command docker -ErrorAction SilentlyContinue) {
+        $dockerInfo = docker info 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            return " [Docker:Running]"
+        } else {
+            return " [Docker:Stopped]"
+        }
+    }
+    return ""
+}
+
+# ============================================
+# Initialize Starship or Custom Prompt
+# ============================================
 if (Get-Command starship -ErrorAction SilentlyContinue) {
     Invoke-Expression (&starship init powershell)
+} else {
+    # Custom prompt with Docker status
+    function prompt {
+        $location = Get-Location
+        $dockerStatus = Get-DockerStatus
+        "PS $location$dockerStatus> "
+    }
 }

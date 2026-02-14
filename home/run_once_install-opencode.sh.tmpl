@@ -1,0 +1,29 @@
+#!/bin/bash
+# chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
+# Installs opencode AI coding assistant
+
+set -e
+
+# {{ if ne .chezmoi.os "windows" }}
+if ! command -v opencode &> /dev/null; then
+    echo "Installing opencode..."
+    
+    # {{ if eq .package_manager "brew" }}
+    # macOS with Homebrew - use the official tap
+    if command -v brew &> /dev/null; then
+        brew install anomalyco/tap/opencode
+    else
+        # Fallback to install script
+        curl -fsSL https://opencode.ai/install | bash
+    fi
+    # {{ else }}
+    # Linux and other systems - use official install script
+    curl -fsSL https://opencode.ai/install | bash
+    # {{ end }}
+    
+    echo "opencode installation complete!"
+    echo "Run 'opencode' to start the AI assistant"
+else
+    echo "opencode already installed, skipping..."
+fi
+# {{ end }}

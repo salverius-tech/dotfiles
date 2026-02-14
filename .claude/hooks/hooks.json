@@ -11,6 +11,66 @@
           "regex": "^/(pickup|snapshot)"
         }
       ]
+    },
+    {
+      "name": "bash-damage-control",
+      "event": "PreToolUse",
+      "script": "hooks/damage-control/bash-tool-damage-control.py",
+      "description": "Validate dangerous bash commands before execution",
+      "matchers": [
+        {
+          "field": "tool",
+          "regex": "^bash$"
+        }
+      ]
+    },
+    {
+      "name": "edit-damage-control",
+      "event": "PreToolUse",
+      "script": "hooks/damage-control/edit-tool-damage-control.py",
+      "description": "Validate file edits for safety",
+      "matchers": [
+        {
+          "field": "tool",
+          "regex": "^edit$"
+        }
+      ]
+    },
+    {
+      "name": "write-damage-control",
+      "event": "PreToolUse",
+      "script": "hooks/damage-control/write-tool-damage-control.py",
+      "description": "Validate file writes for safety",
+      "matchers": [
+        {
+          "field": "tool",
+          "regex": "^write$"
+        }
+      ]
+    },
+    {
+      "name": "session-history",
+      "event": "Stop",
+      "script": "hooks/session-history/log-session.py",
+      "description": "Log session data for analytics and meta-learning"
+    },
+    {
+      "name": "mcp-auto-config",
+      "event": "SessionStart",
+      "script": "hooks/ensure-mcp-config.sh",
+      "description": "Auto-configure MCP servers on session start"
+    },
+    {
+      "name": "post-write-validation",
+      "event": "PostToolUse",
+      "script": "hooks/quality-validation/validate-write.py",
+      "description": "Validate file quality after writes",
+      "matchers": [
+        {
+          "field": "tool",
+          "regex": "^(write|edit)$"
+        }
+      ]
     }
   ]
 }

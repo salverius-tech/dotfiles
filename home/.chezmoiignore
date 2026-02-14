@@ -10,6 +10,10 @@ dot_dircolors
 # Ignore PowerShell profile and Windows scripts on non-Windows
 Documents/
 .chezmoiscripts/windows/**
+AppData/
+AppData/Roaming/Code/
+.docker/
+.wslconfig
 {{- end }}
 
 {{- if eq .chezmoi.os "windows" }}
@@ -21,4 +25,5 @@ Documents/
 .zprofile
 run_once_before_install-packages.sh
 run_once_install-starship.sh
+run_once_install-opencode.sh
 {{- end }}
