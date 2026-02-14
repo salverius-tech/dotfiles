@@ -3,9 +3,12 @@
 
 set -e
 
-echo "Installing packages for # {{ .package_manager }}..."
+# {{ $pm := "unknown" }}
+# {{ if hasKey . "package_manager" }}{{ $pm = .package_manager }}{{ end }}
 
-# {{ if eq .package_manager "apk" }}
+echo "Installing packages for # {{ $pm }}..."
+
+# {{ if eq $pm "apk" }}
 sudo apk update
 sudo apk add \
     py3-dnspython \
@@ -14,7 +17,7 @@ sudo apk add \
     bash-completion \
     curl
 
-# {{ else if eq .package_manager "apt" }}
+# {{ else if eq $pm "apt" }}
 sudo apt update
 sudo apt install -y \
     python3-dnspython \
@@ -34,7 +37,7 @@ if [ ! -f "${FONT_DIR}/JetBrainsMonoNerdFont-Regular.ttf" ]; then
     fc-cache -fv
 fi
 
-# {{ else if eq .package_manager "dnf" }}
+# {{ else if eq $pm "dnf" }}
 sudo dnf install -y \
     python3-dns \
     fontconfig \
@@ -53,7 +56,7 @@ if [ ! -f "${FONT_DIR}/JetBrainsMonoNerdFont-Regular.ttf" ]; then
     fc-cache -fv
 fi
 
-# {{ else if eq .package_manager "pacman" }}
+# {{ else if eq $pm "pacman" }}
 sudo pacman -Syu --noconfirm \
     python-dnspython \
     ttf-jetbrains-mono-nerd \
@@ -61,7 +64,7 @@ sudo pacman -Syu --noconfirm \
     bash-completion \
     curl
 
-# {{ else if eq .package_manager "zypper" }}
+# {{ else if eq $pm "zypper" }}
 sudo zypper install -y \
     python3-dnspython \
     fontconfig \
@@ -80,7 +83,7 @@ if [ ! -f "${FONT_DIR}/JetBrainsMonoNerdFont-Regular.ttf" ]; then
     fc-cache -fv
 fi
 
-# {{ else if eq .package_manager "brew" }}
+# {{ else if eq $pm "brew" }}
 brew install \
     python3 \
     fontconfig
