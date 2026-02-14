@@ -101,8 +101,15 @@ function cd {
 # ============================================
 $sshAgent = Get-Service -Name ssh-agent -ErrorAction SilentlyContinue
 if ($sshAgent -and $sshAgent.Status -ne 'Running') {
-    Start-Service ssh-agent
+    # Check if we have permission to start the service
+    try {
+        Start-Service ssh-agent -ErrorAction Stop
+    } catch {
+        Write-Warning "Could not start ssh-agent. Ensure the service is not disabled and you have admin rights."
+        Write-Warning "To enable: Set-Service ssh-agent -StartupType Automatic"
+    }
 }
+
 
 # Add keys automatically
 $sshDir = Join-Path $env:USERPROFILE '.ssh'
