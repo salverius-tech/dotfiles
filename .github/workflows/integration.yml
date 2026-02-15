@@ -21,8 +21,7 @@ jobs:
       
       - name: Install chezmoi
         run: |
-          sh -c "$(curl -fsLS get.chezmoi.io)"
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
       
       - name: Test chezmoi init
         env:
@@ -74,8 +73,8 @@ jobs:
           
           COPY --chown=testuser:testuser . /tmp/dotfiles/
           
-          RUN sh -c "$(curl -fsLS get.chezmoi.io)" && \
-              /bin/chezmoi init --apply --source=/tmp/dotfiles /tmp/dotfiles
+          RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin && \
+              chezmoi init --apply --source=/tmp/dotfiles /tmp/dotfiles
           
           RUN test -f ~/.bashrc && \
               test -f ~/.gitconfig && \

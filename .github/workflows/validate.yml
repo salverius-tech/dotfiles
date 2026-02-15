@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install chezmoi
-        run: sh -c "$(curl -fsLS get.chezmoi.io)"
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
       
       - name: Validate templates
         run: .github/scripts/validate-templates.sh
