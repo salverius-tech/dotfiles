@@ -21,8 +21,8 @@ jobs:
       - name: Test chezmoi init
         run: |
           export HOME=/tmp/test-home
-          mkdir -p $HOME
-          chezmoi init --apply --source=. --verbose
+          mkdir -p $HOME/.config
+          chezmoi init --apply --source=. --verbose --destination=$HOME
           echo "✅ Chezmoi init completed"
       
       - name: Verify dotfiles deployed
@@ -36,7 +36,7 @@ jobs:
       - name: Test idempotency
         run: |
           export HOME=/tmp/test-home
-          chezmoi init --apply --source=.
+          chezmoi init --apply --source=. --destination=$HOME
           echo "✅ Idempotent test passed"
 
   test-linux-container:
