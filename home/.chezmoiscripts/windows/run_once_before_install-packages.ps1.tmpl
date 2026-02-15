@@ -1,6 +1,14 @@
 # chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
 # Windows package installation script
 
+# Check for Administrator privileges
+if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
+    Write-Host "ERROR: This script requires Administrator privileges." -ForegroundColor Red
+    Write-Host "Please run PowerShell as Administrator and try again." -ForegroundColor Yellow
+    Write-Host "Right-click PowerShell → 'Run as administrator'" -ForegroundColor Cyan
+    exit 1
+}
+
 Write-Host "Installing packages for Windows..." -ForegroundColor Cyan
 
 # Check PowerShell execution policy

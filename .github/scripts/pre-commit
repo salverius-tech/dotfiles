@@ -1,0 +1,20 @@
+#!/bin/bash
+# Pre-commit hook to run tests before commits
+
+echo "🔍 Running pre-commit checks..."
+
+# Stash unstaged changes
+git stash -q --keep-index
+
+# Run tests
+if ! make test; then
+    echo "❌ Pre-commit checks failed. Fix issues before committing."
+    git stash pop -q
+    exit 1
+fi
+
+# Restore unstaged changes
+git stash pop -q
+
+echo "✅ Pre-commit checks passed"
+exit 0

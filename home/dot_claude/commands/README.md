@@ -2,7 +2,27 @@
 
 This directory contains custom slash commands available across all your projects.
 
-## Available Commands
+## Quick Reference
+
+| Command | Purpose | Arguments |
+|---------|---------|-----------|
+| `/analyze-permissions` | Analyze permission patterns from logs | - |
+| `/analyze-skills` | Analyze skill activation patterns | - |
+| `/commit [push]` | Create logical git commits | `push` (optional) |
+| `/compare-setup <repo>` | Compare repo structures | GitHub URL or path |
+| `/idea [slug]` | Capture and organize ideas | Optional slug name |
+| `/introspect [--full]` | Review interactions for improvements | `--full` for all history |
+| `/optimize-prompt <technique>` | Transform prompts using techniques | Technique name |
+| `/optimize-ruleset [personal]` | Analyze and optimize CLAUDE.md | `personal` for ~/.claude |
+| `/pickup [feature]` | Resume work from saved session | Feature name |
+| `/prompt-help [framework]` | Documentation for analysis frameworks | Framework name or `all` |
+| `/ptc <command>` | Run PTC multi-tool workflows | `scrape`, `browser`, `run` |
+| `/snapshot [name]` | Capture session state snapshot | Feature name |
+| `/snapshot-tracking <enable/disable>` | Toggle session context commits | `enable` or `disable` |
+
+---
+
+## Command Details
 
 ### `/analyze-permissions`
 
@@ -21,24 +41,6 @@ This directory contains custom slash commands available across all your projects
 /analyze-permissions
 ```
 
-**Example Output**:
-```
-🔍 Analyzing permission patterns...
-
-Found 48 debug logs with 127 permission requests.
-
-📋 NEW PERMISSION SUGGESTIONS:
-
-✅ SAFE patterns (read-only):
-  • Bash(cat:*) - Used 6 times
-  • Bash(git status:*) - Used 5 times
-
-⚠️  REVIEW patterns:
-  • Bash(mkdir:*) - Used 3 times
-
-Add all SAFE patterns? (y/n)
-```
-
 **When to Use**:
 - After using Claude Code for a while with new tools/commands
 - When tired of approving the same commands repeatedly
@@ -46,125 +48,220 @@ Add all SAFE patterns? (y/n)
 
 ---
 
+### `/analyze-skills`
+
+**Purpose**: Analyze skill activation patterns and suggest trigger improvements.
+
+**What it does**:
+- Scans conversation history for skill activation patterns
+- Detects missed activations
+- Suggests improvements to trigger criteria
+
+**Usage**:
+```bash
+/analyze-skills
+```
+
+---
+
+### `/commit [push]`
+
+**Purpose**: Create logical git commits with conventional format and optional push.
+
+**What it does**:
+- Scans for secrets before committing
+- Categorizes files by type (docs, test, feat, fix, etc.)
+- Generates conventional commit messages
+- Optionally pushes after commit
+
+**Usage**:
+```bash
+/commit          # Commit only
+/commit push     # Commit and push
+```
+
+---
+
+### `/compare-setup <target_repo>`
+
+**Purpose**: Compare repository structures and generate improvement recommendations.
+
+**Arguments**:
+- `target_repo` (required): GitHub URL or path to compare against
+- `implement` (optional): Set to `true` to auto-implement recommendations
+
+**Usage**:
+```bash
+/compare-setup https://github.com/user/repo
+/compare-setup /path/to/local/repo true
+```
+
+---
+
+### `/idea [slug]`
+
+**Purpose**: Brain dump mode - capture ideas quickly and make them actionable.
+
+**What it does**:
+- Creates structured idea folder in `.claude/ideas/`
+- Extracts core concept, problem, and scope
+- Creates actionable tasks
+
+**Usage**:
+```bash
+/idea                    # Interactive naming
+/idea my-new-feature     # Use specific slug
+```
+
+---
+
+### `/introspect [--full]`
+
+**Purpose**: Review interactions to identify improvement opportunities for CLAUDE.md, skills, and agents.
+
+**Arguments**:
+- No args: Analyze current session only
+- `--full`: Analyze all history since last checkpoint
+- `--dry-run`: Show what would be analyzed without changes
+
+**Usage**:
+```bash
+/introspect        # Current session
+/introspect --full # All history
+```
+
+---
+
+### `/optimize-prompt [technique] <prompt>`
+
+**Purpose**: Transform prompts using advanced prompting techniques.
+
+**Techniques**:
+- `meta-prompting`: AI improves the prompt itself
+- `recursive-review`: Iterative refinement
+- `deep-analyze`: Multi-layer analysis
+- `multi-perspective`: View from different angles
+- `deliberate-detail`: Add strategic detail
+- `reasoning-scaffold`: Step-by-step reasoning structure
+- `temperature-simulation`: Adjust style/tone
+
+**Usage**:
+```bash
+/optimize-prompt "Create a Python function to..."
+/optimize-prompt meta-prompting "Explain Docker..."
+```
+
+---
+
 ### `/optimize-ruleset [personal]`
 
 **Purpose**: Analyze and optimize CLAUDE.md ruleset files with meta-learning from chat history.
 
-**Location**: `~/.claude/commands/optimize-ruleset.md`
-
 **What it does**:
-1. **Meta-Learning**: Analyzes your chat history to detect patterns and issues
-2. **Ruleset Analysis**: Examines the target CLAUDE.md for problems
-3. **Smart Recommendations**: Combines history insights with ruleset issues
-4. **Incremental Learning**: Uses CHECKPOINT system to only analyze new history
+1. **Meta-Learning**: Analyzes chat history for patterns
+2. **Ruleset Analysis**: Examines target CLAUDE.md for problems
+3. **Smart Recommendations**: Combines insights
+4. **Incremental**: Uses CHECKPOINT system for new history only
 
 **Usage**:
-
 ```bash
-# Optimize the project ruleset (current project's .claude/CLAUDE.md)
-/optimize-ruleset
-
-# Optimize your personal ruleset (~/.claude/CLAUDE.md)
-/optimize-ruleset personal
-
-# Skip history analysis (just analyze ruleset)
-/optimize-ruleset --no-history
-
-# Only analyze history and suggest rules (don't modify ruleset)
-/optimize-ruleset --history-only
+/optimize-ruleset              # Project ruleset
+/optimize-ruleset personal     # Personal ruleset (~/.claude/CLAUDE.md)
+/optimize-ruleset --no-history # Skip history analysis
 ```
-
-**First Run**:
-- Analyzes entire chat history (~/.claude/history.jsonl)
-- Creates CHECKPOINT file with current timestamp
-- Provides comprehensive optimization report
-- Suggests rules learned from your past sessions
-
-**Subsequent Runs**:
-- Only analyzes NEW history since last checkpoint
-- Updates CHECKPOINT with new timestamp
-- Incrementally improves based on recent patterns
-- Builds on previous learnings
-
-**Example Output**:
-
-```markdown
-# Ruleset Optimization Analysis
-
-**Target**: .claude/CLAUDE.md
-**History Analyzed**: 156 new entries since 2025-11-03
-**Checkpoint Updated**: 2025-11-04T14:47:09Z
-
-## Part 1: Meta-Learning from History
-
-### Pattern: Manual .venv Path Usage (HIGH Priority)
-- **Frequency**: 3 occurrences across 2 sessions
-- **Issue**: Used explicit paths instead of `uv run python`
-- **Suggested Rule**: "Always use `uv run python` in uv projects"
-
-## Part 2: Current Ruleset Analysis
-
-### HIGH Priority Issues
-1. **Outdated Project Description**
-   - **Problem**: Says "CLI application" but it's a "learning spike"
-   - **Fix**: Rewrite overview to accurately describe project
-
-## Part 3: Unified Recommendations
-
-1. Rewrite project overview (from ruleset analysis)
-2. Add rule about `uv run python` (from history)
-3. Fix .venv documentation (from both!)
-4. Add Quick Start section
-...
-```
-
-**Key Features**:
-
-1. **Self-Improving**: Learns from your actual experience
-2. **Incremental**: Uses CHECKPOINT to avoid re-analyzing same history
-3. **Educational**: Explains WHY each recommendation helps
-4. **Prioritized**: HIGH/MEDIUM/LOW priorities with rationale
-5. **Context-Aware**: Understands project type and structure
-6. **Flexible**: Multiple modes (analyze-only, apply fixes, show draft)
-
-**Files Involved**:
-
-```
-~/.claude/
-├── CLAUDE.md                      # Your personal ruleset
-├── CHECKPOINT                     # Last history analysis timestamp
-├── history.jsonl                  # Your chat history
-└── commands/
-    ├── optimize-ruleset.md        # This command
-    └── README.md                  # This file
-
-<project>/.claude/
-└── CLAUDE.md                      # Project-specific ruleset
-```
-
-**CHECKPOINT Format**:
-
-```
-2025-11-04T14:47:09Z
-```
-
-ISO 8601 UTC timestamp. Updated after each history analysis.
 
 **When to Use**:
+- After completing a project - capture learnings
+- When starting a new project - optimize ruleset
+- Periodically (weekly/monthly) - keep updated
+- After frustrating sessions - turn pain points into rules
 
-- ✅ **After completing a project** - Capture learnings
-- ✅ **When starting a new project** - Optimize project ruleset
-- ✅ **Periodically** (weekly/monthly) - Keep personal ruleset updated
-- ✅ **After frustrating sessions** - Turn pain points into rules
-- ✅ **When onboarding to existing project** - Ensure ruleset is accurate
+---
 
-**Benefits**:
+### `/pickup [feature-name]`
 
-1. **Fewer repeated mistakes** - Patterns become rules
-2. **Better onboarding** - New Claude sessions have better context
-3. **Accurate documentation** - Ruleset matches reality
-4. **Continuous improvement** - Each session makes the next one better
-5. **Knowledge retention** - Lessons persist across sessions
+**Purpose**: Resume work from a saved session snapshot.
+
+**What it does**:
+- Shows all available session instances
+- Restores context from `.session/feature/CURRENT.md`
+- Loads todos, files, and recent work
+
+**Usage**:
+```bash
+/pickup              # Show all available sessions
+/pickup feature-name # Resume specific feature
+```
+
+---
+
+### `/prompt-help [framework]`
+
+**Purpose**: Documentation for structured-analysis frameworks.
+
+**Frameworks** (12 total across 3 tiers):
+- **Tier 1**: meta-prompting, recursive-review, deep-analyze, multi-perspective
+- **Tier 2**: deliberate-detail, reasoning-scaffold, temperature-simulation
+- **Tier 3**: adversarial-review, scope-boundary, idempotency-audit, zero-warning-verification, security-first-design, evidence-based-optimization
+
+**Usage**:
+```bash
+/prompt-help              # Show all frameworks
+/prompt-help meta-prompting # Specific framework docs
+```
+
+---
+
+### `/ptc <command> [args...]`
+
+**Purpose**: Run PTC (Programmatic Tool Calling) for efficient multi-tool workflows.
+
+**Commands**:
+- `scrape <urls...>`: Multi-URL scraping with summarization
+- `browser "<instructions>"`: Browser automation pipeline
+- `run "<prompt>"`: Custom PTC prompt execution
+
+**Usage**:
+```bash
+/ptc scrape https://example.com https://site.com
+/ptc browser "Find all links on the page"
+/ptc run "Analyze this codebase structure"
+```
+
+---
+
+### `/snapshot [feature-name]`
+
+**Purpose**: Manually capture session state snapshot.
+
+**What it does**:
+- Saves current work context to `.session/feature/CURRENT.md`
+- Captures todos, open files, recent changes
+- Enables resuming work later with `/pickup`
+
+**Usage**:
+```bash
+/snapshot              # Infer feature from context
+/snapshot my-feature   # Explicit feature name
+```
+
+---
+
+### `/snapshot-tracking <enable|disable>`
+
+**Purpose**: Toggle automatic session context commits for current project.
+
+**What it does**:
+- Enables/disables automatic `.session/` commits
+- Manages `.gitignore` configuration
+- Updates CLAUDE.md markers
+
+**Usage**:
+```bash
+/snapshot-tracking       # Show current status
+/snapshot-tracking enable
+/snapshot-tracking disable
+```
 
 ---
 
@@ -207,16 +304,5 @@ When this command is run:
 
 ---
 
-## Future Command Ideas
-
-- `/commit [push]` - Smart commit with conventional commits (✅ Implemented)
-- `/review` - Code review checklist
-- `/test` - Run tests with smart reporting
-- `/doc` - Generate/update documentation
-- `/refactor` - Suggest refactorings
-- `/migrate` - Help with migrations/upgrades
-
----
-
 **Created**: 2025-11-04
-**Updated**: 2025-11-06 (Added /analyze-permissions command)
+**Updated**: 2025-02-15 (Added all 13 commands)

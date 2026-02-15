@@ -6,7 +6,7 @@ Cross-platform dotfiles managed with [chezmoi](https://chezmoi.io).
 
 | OS | Package Managers |
 |----|------------------|
-| Linux | apt, apk, dnf, pacman, zypper, nix |
+| Linux | apt, apk, dnf, pacman, zypper |
 | macOS | Homebrew |
 | Windows | winget |
 
@@ -25,7 +25,10 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply salverius-tech/dotfiles
 
 ### Windows (PowerShell)
 
+**Note:** Installation requires Administrator privileges for package installation.
+
 ```powershell
+# Run PowerShell as Administrator, then:
 winget install twpayne.chezmoi
 chezmoi init --apply salverius-tech/dotfiles
 ```
@@ -133,9 +136,45 @@ cd ~/.local/share/chezmoi
 chezmoi apply
 ```
 
-## NixOS
+## Quick Start
 
-The `nix/` directory contains standalone NixOS configurations. These are not managed by chezmoi and should be applied separately using NixOS tools.
+After installation, use these common chezmoi commands:
+
+```bash
+# Edit a dotfile and apply changes immediately
+chezmoi edit ~/.bashrc --apply
+
+# See what changes would be applied (dry run)
+chezmoi diff
+
+# Apply all pending changes
+chezmoi apply
+
+# Update from remote repository
+chezmoi update
+
+# Check chezmoi configuration
+chezmoi doctor
+```
+
+## Testing
+
+To validate changes before submitting:
+```bash
+make test    # Run quick tests
+make all     # Run full test suite
+```
+
+See [CLAUDE.md](CLAUDE.md) for detailed testing information.
+
+### CI/CD
+- **Validate**: Runs on every PR
+- **Integration**: Full tests on Linux and Windows (main branch + weekly)
+- **Discord notifications**: Rich embed notifications for all CI events
+
+## Developer Documentation
+
+For detailed architecture information, contributing guidelines, and development workflows, see [CLAUDE.md](CLAUDE.md).
 
 ## License
 

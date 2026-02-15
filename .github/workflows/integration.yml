@@ -1,0 +1,210 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [main, master]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sundays
+  workflow_dispatch:
+
+jobs:
+  test-linux:
+    name: Full Linux Integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up test environment
+        run: |
+          export HOME=/tmp/test-home
+          mkdir -p $HOME
+      
+      - name: Install chezmoi
+        run: sh -c "$(curl -fsLS get.chezmoi.io)"
+      
+      - name: Test chezmoi init
+        env:
+          HOME: /tmp/test-home
+        run: |
+          chezmoi init --apply --source=. --verbose .
+          echo "✅ Chezmoi init completed"
+      
+      - name: Verify dotfiles deployed
+        env:
+          HOME: /tmp/test-home
+        run: |
+          test -f $HOME/.bashrc && echo "✅ .bashrc deployed"
+          test -f $HOME/.gitconfig && echo "✅ .gitconfig deployed"
+          test -d $HOME/.claude && echo "✅ .claude directory deployed"
+          test -f $HOME/.config/starship.toml && echo "✅ Starship config deployed"
+      
+      - name: Test idempotency
+        env:
+          HOME: /tmp/test-home
+        run: |
+          chezmoi init --apply --source=. .
+          echo "✅ Idempotent test passed"
+
+  test-linux-container:
+    name: Linux Container Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build and run container test
+        run: |
+          cat > Dockerfile.test <<'EOF'
+          FROM ubuntu:22.04
+          
+          RUN apt-get update && apt-get install -y \
+              curl \
+              git \
+              sudo \
+              unzip \
+              fontconfig \
+              && rm -rf /var/lib/apt/lists/*
+          
+          RUN useradd -m -s /bin/bash testuser && \
+              echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+          
+          USER testuser
+          WORKDIR /home/testuser
+          
+          COPY --chown=testuser:testuser . /tmp/dotfiles/
+          
+          RUN sh -c "$(curl -fsLS get.chezmoi.io)" && \
+              /bin/chezmoi init --apply --source=/tmp/dotfiles /tmp/dotfiles
+          
+          RUN test -f ~/.bashrc && \
+              test -f ~/.gitconfig && \
+              test -d ~/.claude && \
+              echo "✅ All dotfiles installed successfully"
+          EOF
+          
+          docker build -f Dockerfile.test -t dotfiles-test .
+          echo "✅ Container integration test passed"
+
+  test-windows:
+    name: Test on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install chezmoi
+        run: |
+          winget install --id twpayne.chezmoi --accept-source-agreements --accept-package-agreements --silent
+          $env:Path = [Environment]::GetEnvironmentVariable("Path", "User") + ";" + $env:Path
+          echo "$env:Path" | Out-File -FilePath $env:GITHUB_PATH -Append
+      
+      - name: Test template rendering
+        shell: pwsh
+        run: |
+          $env:HOME = "$env:TEMP\test-home"
+          New-Item -ItemType Directory -Path $env:HOME -Force | Out-Null
+          
+          $jsonData = '{"chezmoi": {"os": "windows"}, "package_manager": "winget"}'
+          $jsonData | chezmoi execute-template --init `
+            --config home/.chezmoi.toml.tmpl `
+            --source home `
+            --destination $env:HOME
+          
+          Write-Host "✅ Windows templates render successfully"
+      
+      - name: Verify PowerShell syntax
+        shell: pwsh
+        run: |
+          $scripts = Get-ChildItem -Path "home/.chezmoiscripts/windows" -Filter "*.ps1.tmpl"
+          foreach ($script in $scripts) {
+              $content = Get-Content $script.FullName -Raw
+              $errors = $null
+              $null = [System.Management.Automation.PSParser]::Tokenize($content, [ref]$errors)
+              if ($errors.Count -gt 0) {
+                  Write-Host "❌ Syntax errors in $($script.Name):"
+                  $errors | ForEach-Object { Write-Host "  - $($_.Message)" }
+                  exit 1
+              }
+          }
+          Write-Host "✅ PowerShell scripts have valid syntax"
+
+  # Discord notification with rich embed format
+  discord-notify:
+    name: Discord Notification
+    runs-on: ubuntu-latest
+    needs: [test-linux, test-linux-container, test-windows]
+    if: always()
+    steps:
+      - name: Send Discord Notification
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const webhookUrl = '${{ secrets.DISCORD_WEBHOOK }}';
+            const jobs = {
+              linux: '${{ needs.test-linux.result }}',
+              container: '${{ needs.test-linux-container.result }}',
+              windows: '${{ needs.test-windows.result }}'
+            };
+            
+            const allPassed = Object.values(jobs).every(r => r === 'success');
+            const status = allPassed ? '✅ PASSED' : '🔴 FAILED';
+            const color = allPassed ? 3066993 : 15158332;
+            const eventName = '${{ github.event_name }}';
+            const isScheduled = eventName === 'schedule';
+            const triggerType = isScheduled ? 'Weekly Scheduled' : 'Integration';
+            
+            let description = '**Test Results:**\n';
+            description += `• Linux (Ubuntu): ${jobs.linux}\n`;
+            description += `• Linux (Container): ${jobs.container}\n`;
+            description += `• Windows: ${jobs.windows}\n`;
+            
+            if (!allPassed) {
+              description += '\n⚠️ **Failed Jobs:**\n';
+              if (jobs.linux !== 'success') description += '• Linux tests failed\n';
+              if (jobs.container !== 'success') description += '• Container tests failed\n';
+              if (jobs.windows !== 'success') description += '• Windows tests failed\n';
+            }
+            
+            const payload = {
+              embeds: [{
+                title: `${triggerType} Tests ${status}`,
+                description: description,
+                color: color,
+                fields: [
+                  {
+                    name: 'Repository',
+                    value: '${{ github.repository }}',
+                    inline: true
+                  },
+                  {
+                    name: 'Branch',
+                    value: '${{ github.ref_name }}',
+                    inline: true
+                  },
+                  {
+                    name: 'Commit',
+                    value: '${{ github.sha }}'.substring(0, 7),
+                    inline: true
+                  },
+                  {
+                    name: 'Author',
+                    value: '${{ github.actor }}',
+                    inline: true
+                  },
+                  {
+                    name: 'Event',
+                    value: eventName,
+                    inline: true
+                  }
+                ],
+                timestamp: new Date().toISOString(),
+                url: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+                footer: {
+                  text: 'Dotfiles CI/CD'
+                }
+              }]
+            };
+            
+            await fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
