@@ -20,7 +20,9 @@ jobs:
           mkdir -p $HOME
       
       - name: Install chezmoi
-        run: sh -c "$(curl -fsLS get.chezmoi.io)"
+        run: |
+          sh -c "$(curl -fsLS get.chezmoi.io)"
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
       
       - name: Test chezmoi init
         env:
