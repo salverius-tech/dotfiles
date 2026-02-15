@@ -30,13 +30,15 @@ jobs:
           RUN useradd -m -s /bin/bash testuser && \
               echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
           
+          # Install chezmoi as root
+          RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+          
           USER testuser
           WORKDIR /home/testuser
           
           COPY --chown=testuser:testuser . /tmp/dotfiles/
           
-          RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin && \
-              chezmoi init --apply --source=/tmp/dotfiles
+          RUN chezmoi init --apply --source=/tmp/dotfiles
           
           RUN test -f ~/.bashrc && \
               test -f ~/.gitconfig && \
