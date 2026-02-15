@@ -43,7 +43,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
   # Use forward slashes then convert - cleaner for jq
   FLARESOLVERR_PATH="${WIN_HOME}/.claude/tools/flaresolverr-mcp/server.py"
   # Convert to backslashes for Windows
-  FLARESOLVERR_PATH=$(echo "$FLARESOLVERR_PATH" | sed 's|/|\\|g')
+  FLARESOLVERR_PATH="${FLARESOLVERR_PATH//\//\\}"
 elif [[ -n "$USERPROFILE" ]]; then
   # Windows without cygpath - build with backslashes
   FLARESOLVERR_PATH="${USERPROFILE}\\.claude\\tools\\flaresolverr-mcp\\server.py"
@@ -56,7 +56,8 @@ fi
 add_mcp_configs() {
   if command -v jq &>/dev/null; then
     # Use jq to add configs
-    local tmp_file=$(mktemp)
+    local tmp_file
+    tmp_file=$(mktemp)
 
     # Check and add browsermcp if missing
     if ! jq -e '.mcpServers.browsermcp' "$CLAUDE_JSON" &>/dev/null; then

@@ -6,6 +6,8 @@ set -e
 # {{ $pm := "unknown" }}
 # {{ if hasKey . "package_manager" }}# {{ $pm = .package_manager }}# {{ end }}
 
+# shellcheck disable=SC2154
+# $pm is set by chezmoi template
 echo "Installing packages for # {{ $pm }}..."
 
 # {{ if eq $pm "apk" }}
