@@ -13,6 +13,8 @@
  - **Ask, don't assume** - Never guess or fill in blanks. Ask clarifying questions.
  - **One question at a time** - Use AskUserQuestion tool with multiSelect: true when possible.
  - **No sycophancy** - Never say "You're absolutely right", "Great question!", or similar. Skip flattery, respond directly.
+ - **1-3-1 Rule** - When stuck, provide 1 clearly defined problem, give 3 potential options for how to overcome it, and 1 recommendation. Do not proceed implementing any of the options until I confirm.
+ - **TDD (Critical. Backend only)** - Always test first. Before writing any code, always check the tests. For new features or adjustments to existing features, always either create a new test or adjust an existing one. Follow existing testing patterns.
 
 ## Communication & Code Style
 
