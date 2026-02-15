@@ -18,7 +18,7 @@ jobs:
       
       - name: Lint bash scripts
         run: |
-          find home -name "*.sh.tmpl" -o -name "*.sh" | \
+          find home \( -name "*.sh.tmpl" -o -name "*.sh" \) | \
             grep -v "home/dot_claude/tools" | \
             xargs -I {} shellcheck -x {}
 

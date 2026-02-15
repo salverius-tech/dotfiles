@@ -14,36 +14,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up test environment
-        run: |
-          export HOME=/tmp/test-home
-          mkdir -p $HOME
-      
       - name: Install chezmoi
         run: |
           sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
       
       - name: Test chezmoi init
-        env:
-          HOME: /tmp/test-home
         run: |
-          chezmoi init --apply --source=. --verbose .
+          export HOME=/tmp/test-home
+          mkdir -p $HOME
+          chezmoi init --apply --source=. --verbose
           echo "✅ Chezmoi init completed"
       
       - name: Verify dotfiles deployed
-        env:
-          HOME: /tmp/test-home
         run: |
+          export HOME=/tmp/test-home
           test -f $HOME/.bashrc && echo "✅ .bashrc deployed"
           test -f $HOME/.gitconfig && echo "✅ .gitconfig deployed"
           test -d $HOME/.claude && echo "✅ .claude directory deployed"
           test -f $HOME/.config/starship.toml && echo "✅ Starship config deployed"
       
       - name: Test idempotency
-        env:
-          HOME: /tmp/test-home
         run: |
-          chezmoi init --apply --source=. .
+          export HOME=/tmp/test-home
+          chezmoi init --apply --source=.
           echo "✅ Idempotent test passed"
 
   test-linux-container:
@@ -92,10 +85,13 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Install chezmoi
+        shell: pwsh
         run: |
-          winget install --id twpayne.chezmoi --accept-source-agreements --accept-package-agreements --silent
-          $env:Path = [Environment]::GetEnvironmentVariable("Path", "User") + ";" + $env:Path
-          echo "$env:Path" | Out-File -FilePath $env:GITHUB_PATH -Append
+          $chezmoiVersion = "2.46.0"
+          $chezmoiUrl = "https://github.com/twpayne/chezmoi/releases/download/v${chezmoiVersion}/chezmoi_${chezmoiVersion}_windows_amd64.zip"
+          Invoke-WebRequest -Uri $chezmoiUrl -OutFile "chezmoi.zip"
+          Expand-Archive -Path "chezmoi.zip" -DestinationPath "$env:TEMP\chezmoi" -Force
+          "$env:TEMP\chezmoi" | Out-File -FilePath $env:GITHUB_PATH -Append
       
       - name: Test template rendering
         shell: pwsh
@@ -103,8 +99,8 @@ jobs:
           $env:HOME = "$env:TEMP\test-home"
           New-Item -ItemType Directory -Path $env:HOME -Force | Out-Null
           
-          $jsonData = '{"chezmoi": {"os": "windows"}, "package_manager": "winget"}'
-          $jsonData | chezmoi execute-template --init `
+          $env:CHEZMOI_OS = "windows"
+          & "$env:TEMP\chezmoi\chezmoi.exe" execute-template --init `
             --config home/.chezmoi.toml.tmpl `
             --source home `
             --destination $env:HOME
