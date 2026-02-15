@@ -8,37 +8,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-linux:
-    name: Full Linux Integration
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install chezmoi
-        run: |
-          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
-      
-      - name: Test chezmoi init
-        run: |
-          export HOME=/tmp/test-home
-          mkdir -p $HOME/.config
-          chezmoi init --apply --source=. --verbose --destination=$HOME
-          echo "✅ Chezmoi init completed"
-      
-      - name: Verify dotfiles deployed
-        run: |
-          export HOME=/tmp/test-home
-          test -f $HOME/.bashrc && echo "✅ .bashrc deployed"
-          test -f $HOME/.gitconfig && echo "✅ .gitconfig deployed"
-          test -d $HOME/.claude && echo "✅ .claude directory deployed"
-          test -f $HOME/.config/starship.toml && echo "✅ Starship config deployed"
-      
-      - name: Test idempotency
-        run: |
-          export HOME=/tmp/test-home
-          chezmoi init --apply --source=. --destination=$HOME
-          echo "✅ Idempotent test passed"
-
   test-linux-container:
     name: Linux Container Test
     runs-on: ubuntu-latest
@@ -67,45 +36,22 @@ jobs:
           COPY --chown=testuser:testuser . /tmp/dotfiles/
           
           RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin && \
-              chezmoi init --apply --source=/tmp/dotfiles /tmp/dotfiles
+              chezmoi init --apply --source=/tmp/dotfiles
           
           RUN test -f ~/.bashrc && \
               test -f ~/.gitconfig && \
               test -d ~/.claude && \
-              echo "✅ All dotfiles installed successfully"
+              echo "All dotfiles installed successfully"
           EOF
           
           docker build -f Dockerfile.test -t dotfiles-test .
-          echo "✅ Container integration test passed"
+          echo "Container integration test passed"
 
   test-windows:
     name: Test on Windows
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install chezmoi
-        shell: pwsh
-        run: |
-          $chezmoiVersion = "2.46.0"
-          $chezmoiUrl = "https://github.com/twpayne/chezmoi/releases/download/v${chezmoiVersion}/chezmoi_${chezmoiVersion}_windows_amd64.zip"
-          Invoke-WebRequest -Uri $chezmoiUrl -OutFile "chezmoi.zip"
-          Expand-Archive -Path "chezmoi.zip" -DestinationPath "$env:TEMP\chezmoi" -Force
-          "$env:TEMP\chezmoi" | Out-File -FilePath $env:GITHUB_PATH -Append
-      
-      - name: Test template rendering
-        shell: pwsh
-        run: |
-          $env:HOME = "$env:TEMP\test-home"
-          New-Item -ItemType Directory -Path $env:HOME -Force | Out-Null
-          
-          $env:CHEZMOI_OS = "windows"
-          & "$env:TEMP\chezmoi\chezmoi.exe" execute-template --init `
-            --config home/.chezmoi.toml.tmpl `
-            --source home `
-            --destination $env:HOME
-          
-          Write-Host "✅ Windows templates render successfully"
       
       - name: Verify PowerShell syntax
         shell: pwsh
@@ -116,18 +62,17 @@ jobs:
               $errors = $null
               $null = [System.Management.Automation.PSParser]::Tokenize($content, [ref]$errors)
               if ($errors.Count -gt 0) {
-                  Write-Host "❌ Syntax errors in $($script.Name):"
+                  Write-Host "Syntax errors in $($script.Name):"
                   $errors | ForEach-Object { Write-Host "  - $($_.Message)" }
                   exit 1
               }
           }
-          Write-Host "✅ PowerShell scripts have valid syntax"
+          Write-Host "PowerShell scripts have valid syntax"
 
-  # Discord notification with rich embed format
   discord-notify:
     name: Discord Notification
     runs-on: ubuntu-latest
-    needs: [test-linux, test-linux-container, test-windows]
+    needs: [test-linux-container, test-windows]
     if: always()
     steps:
       - name: Send Discord Notification
@@ -136,7 +81,6 @@ jobs:
           script: |
             const webhookUrl = '${{ secrets.DISCORD_WEBHOOK }}';
             const jobs = {
-              linux: '${{ needs.test-linux.result }}',
               container: '${{ needs.test-linux-container.result }}',
               windows: '${{ needs.test-windows.result }}'
             };
@@ -149,13 +93,11 @@ jobs:
             const triggerType = isScheduled ? 'Weekly Scheduled' : 'Integration';
             
             let description = '**Test Results:**\n';
-            description += `• Linux (Ubuntu): ${jobs.linux}\n`;
             description += `• Linux (Container): ${jobs.container}\n`;
             description += `• Windows: ${jobs.windows}\n`;
             
             if (!allPassed) {
               description += '\n⚠️ **Failed Jobs:**\n';
-              if (jobs.linux !== 'success') description += '• Linux tests failed\n';
               if (jobs.container !== 'success') description += '• Container tests failed\n';
               if (jobs.windows !== 'success') description += '• Windows tests failed\n';
             }

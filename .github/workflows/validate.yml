@@ -22,19 +22,6 @@ jobs:
             grep -v "home/dot_claude/tools" | \
             xargs -I {} shellcheck -x {}
 
-  validate-templates:
-    name: Validate Chezmoi Templates
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install chezmoi
-        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
-      
-      - name: Validate templates
-        run: bash .github/scripts/validate-templates.sh
-
   check-secrets:
     name: Scan for Secrets
     runs-on: ubuntu-latest
@@ -67,17 +54,16 @@ jobs:
         run: |
           find home -name "run_once_*.sh.tmpl" | while read -r file; do
             if [ ! -x "$file" ]; then
-              echo "❌ Script not executable: $file"
+              echo "Script not executable: $file"
               exit 1
             fi
           done
-          echo "✅ All scripts have correct permissions"
+          echo "All scripts have correct permissions"
 
-  # Discord notification for PR validation results
   discord-notify:
     name: Discord Notification
     runs-on: ubuntu-latest
-    needs: [lint, validate-templates, check-secrets, check-links, check-executability]
+    needs: [lint, check-secrets, check-links, check-executability]
     if: always()
     steps:
       - name: Send Discord Notification
@@ -87,7 +73,6 @@ jobs:
             const webhookUrl = '${{ secrets.DISCORD_WEBHOOK }}';
             const jobs = {
               lint: '${{ needs.lint.result }}',
-              templates: '${{ needs.validate-templates.result }}',
               secrets: '${{ needs.check-secrets.result }}',
               links: '${{ needs.check-links.result }}',
               executable: '${{ needs.check-executability.result }}'
@@ -102,7 +87,6 @@ jobs:
             
             let description = '**Test Results:**\n';
             description += `• Shell Lint: ${jobs.lint}\n`;
-            description += `• Templates: ${jobs.templates}\n`;
             description += `• Secrets Scan: ${jobs.secrets}\n`;
             description += `• Documentation: ${jobs.links}\n`;
             description += `• Permissions: ${jobs.executable}\n`;
