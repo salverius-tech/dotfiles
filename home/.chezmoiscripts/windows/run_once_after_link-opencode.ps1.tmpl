@@ -1,0 +1,76 @@
+# chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
+
+# Link opencode to .claude configuration on Windows
+# Uses directory junctions (mklink /J) which work without admin privileges
+
+Write-Host "Linking opencode to .claude configuration..." -ForegroundColor Green
+
+# Source directories (where files are deployed)
+$claudeDir = "$env:USERPROFILE\.claude"
+$commandsSrc = "$claudeDir\commands"
+$agentsSrc = "$claudeDir\agents"
+
+# Target directories (where opencode looks)
+$opencodeDir = "$env:USERPROFILE\.config\opencode"
+$commandsTarget = "$opencodeDir\commands"
+$agentsTarget = "$opencodeDir\agents"
+
+# Check if .claude directories exist
+$hasCommands = Test-Path -Path $commandsSrc -PathType Container
+$hasAgents = Test-Path -Path $agentsSrc -PathType Container
+
+if (-not $hasCommands -and -not $hasAgents) {
+    Write-Warning "Neither ~/.claude/commands nor ~/.claude/agents found."
+    Write-Host "Skipping opencode link creation."
+    exit 0
+}
+
+# Create ~/.config/opencode directory if it doesn't exist
+if (-not (Test-Path -Path $opencodeDir)) {
+    New-Item -ItemType Directory -Path $opencodeDir -Force | Out-Null
+    Write-Host "Created directory: $opencodeDir"
+}
+
+# Function to create or update junction
+function Create-Junction {
+    param(
+        [string]$Source,
+        [string]$Target,
+        [string]$Name
+    )
+    
+    if (-not (Test-Path -Path $Source)) {
+        Write-Host "Source directory not found: $Source"
+        return
+    }
+    
+    # If target exists
+    if (Test-Path -Path $Target) {
+        # Check if it's a junction
+        $item = Get-Item -Path $Target -Force -ErrorAction SilentlyContinue
+        if ($item.Attributes -match 'ReparsePoint') {
+            Write-Host "Updating existing junction: $Target -> $Source"
+            Remove-Item -Path $Target -Force
+        }
+        # If it's a directory, backup and remove
+        elseif ($item.PSIsContainer) {
+            $backup = "$Target.backup.$(Get-Date -Format 'yyyyMMddHHmmss')"
+            Write-Host "Backing up existing directory: $Target -> $backup"
+            Rename-Item -Path $Target -NewName $backup
+        }
+        else {
+            # It's a file or something else, remove it
+            Remove-Item -Path $Target -Force
+        }
+    }
+    
+    # Create the junction
+    cmd /c mklink /J "$Target" "$Source" | Out-Null
+    Write-Host "Created junction: $Name -> $Source" -ForegroundColor Green
+}
+
+# Create junctions
+Create-Junction -Source $commandsSrc -Target $commandsTarget -Name "commands"
+Create-Junction -Source $agentsSrc -Target $agentsTarget -Name "agents"
+
+Write-Host "opencode configuration links created successfully!" -ForegroundColor Green
