@@ -1,8 +1,7 @@
 {
   "$schema": "https://aka.ms/terminal-profiles-schema",
-  "profiles": [
-    {
-      "updates": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+  "profiles": {
+    "defaults": {
       "font": {
         "face": "JetBrainsMono Nerd Font",
         "size": 13
@@ -10,7 +9,7 @@
       "colorScheme": "StarshipTheme",
       "cursorShape": "bar",
       "useAcrylic": true,
-      "acrylicOpacity": 0.8,
+      "opacity": 80,
       "backgroundImageOpacity": 0.4,
       "padding": "8, 8, 8, 8",
       "historySize": 10000,
@@ -19,12 +18,8 @@
       "suppressApplicationTitle": true,
       "closeOnExit": "graceful",
       "startingDirectory": "%USERPROFILE%"
-    },
-    {
-      "updates": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
-      "hidden": true
     }
-  ],
+  },
   "schemes": [
     {
       "name": "StarshipTheme",
