@@ -1,4 +1,5 @@
 # ~/.bashrc: executed by bash(1) for non-login shells.
+# shellcheck shell=bash
 
 # If not running interactively, don't do anything
 case $- in
@@ -57,7 +58,11 @@ esac
 
 # Color support
 if [ -x /usr/bin/dircolors ]; then
-    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    if test -r ~/.dircolors; then
+        eval "$(dircolors -b ~/.dircolors)"
+    else
+        eval "$(dircolors -b)"
+    fi
     alias ls='ls --color=auto'
     alias grep='grep --color=auto'
     alias fgrep='fgrep --color=auto'
@@ -74,11 +79,13 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 
 # Load shared aliases
 if [ -f ~/.shell_aliases ]; then
+    # shellcheck disable=SC1090
     . ~/.shell_aliases
 fi
 
 # Load bash-specific aliases
 if [ -f ~/.bash_aliases ]; then
+    # shellcheck disable=SC1090
     . ~/.bash_aliases
 fi
 
@@ -95,7 +102,8 @@ fi
 _set_distro_icon() {
     local icon=""
     if [ -f /etc/os-release ]; then
-        local distro_id=$(grep "^ID=" /etc/os-release | cut -d= -f2 | tr -d '"')
+        local distro_id
+        distro_id=$(grep "^ID=" /etc/os-release | cut -d= -f2 | tr -d '"')
         case "$distro_id" in
             kali)       icon="ﴣ";;
             arch)       icon="";;
@@ -125,13 +133,23 @@ _set_distro_icon() {
 }
 
 # Starship configuration
-export STARSHIP_DISTRO="$(_set_distro_icon) "
+STARSHIP_DISTRO="$(_set_distro_icon) "
+export STARSHIP_DISTRO
 export STARSHIP_CONFIG=~/.config/starship.toml
 if command -v starship &> /dev/null; then
     eval "$(starship init bash)"
 fi
 
-# SSH Agent
-if command -v ssh-agent &> /dev/null; then
-    eval $(ssh-agent) > /dev/null 2>&1
+# SSH Agent - reuse existing agent across sessions
+if command -v ssh-agent &>/dev/null; then
+    _ssh_agent_env="${HOME}/.ssh/agent-env"
+    if [ -f "${_ssh_agent_env}" ]; then
+        # shellcheck source=/dev/null
+        . "${_ssh_agent_env}" > /dev/null
+    fi
+    if ! ssh-add -l &>/dev/null; then
+        eval "$(ssh-agent -s)" > "${_ssh_agent_env}"
+        chmod 600 "${_ssh_agent_env}"
+    fi
+    unset _ssh_agent_env
 fi
