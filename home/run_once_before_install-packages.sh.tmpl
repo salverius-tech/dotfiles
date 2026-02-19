@@ -10,6 +10,19 @@ set -e
 # $pm is set by chezmoi template
 echo "Installing packages for # {{ $pm }}..."
 
+# Install JetBrains Mono Nerd Font from GitHub releases
+install_jetbrains_mono_nerd_font() {
+    local font_dir="${HOME}/.local/share/fonts"
+    mkdir -p "${font_dir}"
+    if [ ! -f "${font_dir}/JetBrainsMonoNerdFont-Regular.ttf" ]; then
+        echo "Installing JetBrains Mono Nerd Font..."
+        curl -fsSL -o /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
+        unzip -o /tmp/JetBrainsMono.zip -d "${font_dir}"
+        rm /tmp/JetBrainsMono.zip
+        fc-cache -fv
+    fi
+}
+
 # {{ if eq $pm "apk" }}
 sudo apk update
 sudo apk add \
@@ -29,15 +42,7 @@ sudo apt install -y \
     unzip
 
 # Install JetBrains Mono Nerd Font manually (not in apt repos)
-FONT_DIR="${HOME}/.local/share/fonts"
-mkdir -p "${FONT_DIR}"
-if [ ! -f "${FONT_DIR}/JetBrainsMonoNerdFont-Regular.ttf" ]; then
-    echo "Installing JetBrains Mono Nerd Font..."
-    curl -fsSL -o /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
-    unzip -o /tmp/JetBrainsMono.zip -d "${FONT_DIR}"
-    rm /tmp/JetBrainsMono.zip
-    fc-cache -fv
-fi
+install_jetbrains_mono_nerd_font
 
 # {{ else if eq $pm "dnf" }}
 sudo dnf install -y \
@@ -48,15 +53,7 @@ sudo dnf install -y \
     unzip
 
 # Install JetBrains Mono Nerd Font manually
-FONT_DIR="${HOME}/.local/share/fonts"
-mkdir -p "${FONT_DIR}"
-if [ ! -f "${FONT_DIR}/JetBrainsMonoNerdFont-Regular.ttf" ]; then
-    echo "Installing JetBrains Mono Nerd Font..."
-    curl -fsSL -o /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
-    unzip -o /tmp/JetBrainsMono.zip -d "${FONT_DIR}"
-    rm /tmp/JetBrainsMono.zip
-    fc-cache -fv
-fi
+install_jetbrains_mono_nerd_font
 
 # {{ else if eq $pm "pacman" }}
 sudo pacman -Syu --noconfirm \
@@ -75,15 +72,7 @@ sudo zypper install -y \
     unzip
 
 # Install JetBrains Mono Nerd Font manually
-FONT_DIR="${HOME}/.local/share/fonts"
-mkdir -p "${FONT_DIR}"
-if [ ! -f "${FONT_DIR}/JetBrainsMonoNerdFont-Regular.ttf" ]; then
-    echo "Installing JetBrains Mono Nerd Font..."
-    curl -fsSL -o /tmp/JetBrainsMono.zip "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
-    unzip -o /tmp/JetBrainsMono.zip -d "${FONT_DIR}"
-    rm /tmp/JetBrainsMono.zip
-    fc-cache -fv
-fi
+install_jetbrains_mono_nerd_font
 
 # {{ else if eq $pm "brew" }}
 brew install \
