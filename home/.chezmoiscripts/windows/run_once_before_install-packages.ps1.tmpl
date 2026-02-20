@@ -9,6 +9,22 @@ if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     exit 1
 }
 
+# Enable SSH Agent service (required for SSH keys)
+Write-Host "Configuring SSH Agent service..." -ForegroundColor Cyan
+$sshAgent = Get-Service -Name ssh-agent -ErrorAction SilentlyContinue
+if ($sshAgent) {
+    if ($sshAgent.StartType -eq 'Disabled') {
+        Set-Service -Name ssh-agent -StartupType Automatic
+        Write-Host "  Enabled ssh-agent (set to Automatic)" -ForegroundColor Green
+    }
+    if ($sshAgent.Status -ne 'Running') {
+        Start-Service -Name ssh-agent -ErrorAction SilentlyContinue
+        Write-Host "  Started ssh-agent service" -ForegroundColor Green
+    }
+} else {
+    Write-Warning "  ssh-agent service not found. Install OpenSSH Client via Windows Settings → Apps → Optional Features."
+}
+
 Write-Host "Installing packages for Windows..." -ForegroundColor Cyan
 
 # Check PowerShell execution policy
