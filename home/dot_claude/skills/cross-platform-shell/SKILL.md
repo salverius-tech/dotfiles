@@ -205,7 +205,21 @@ install text eol=lf
 *.bat text eol=crlf
 *.cmd text eol=crlf
 *.ps1 text eol=crlf
+
+# Git hooks and hook-like scripts (no .sh extension) - MUST be LF
+scripts/hooks/*    text eol=lf
+hooks/*            text eol=lf
 ```
+
+### Missing .gitattributes — Latent Bug
+
+A repo without `.gitattributes` relies entirely on each developer's `core.autocrlf` setting.
+On Windows with `core.autocrlf=true`, a fresh checkout silently converts shell scripts to CRLF,
+causing `\r: command not found` at runtime even if the current working copy looks fine.
+
+**Rule:** Any project that contains `.sh` files or hook scripts must have a `.gitattributes`
+enforcing `eol=lf` for those files. Add it when the first shell script is created, not after
+the first Windows breakage.
 
 ### Pre-flight Check
 

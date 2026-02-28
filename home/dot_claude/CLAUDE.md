@@ -45,7 +45,7 @@
 ### TodoWrite Usage
 **Use for:** 3+ step tasks, complex planning, user-requested lists
 **Skip for:** Single/trivial tasks, informational requests
-**Rules:** Mark in_progress before starting, mark [x] IMMEDIATELY after each completion, one in_progress max
+**Rules:** Mark first item in_progress in the initial creation call when starting immediately; mark [x] IMMEDIATELY after each completion; one in_progress max
 
 ## Common Pitfalls to Avoid
 - **Time estimates** → ❌ "~2 hours", "Phase 1: 1 day" ✅ "Steps: 1. X, 2. Y, 3. Z"
