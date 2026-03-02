@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: Git workflow and commit guidelines. Trigger keywords: git, commit, push, .git, version control. MUST be activated before ANY git commit, push, or version control operation. Includes security scanning for secrets (API keys, tokens, .env files), commit message formatting with HEREDOC, logical commit grouping (docs, test, feat, fix, refactor, chore, build, deps), push behavior rules, safety rules for hooks and force pushes, and CRITICAL safeguards for destructive operations (filter-branch, gc --prune, reset --hard). Activate when user requests committing changes, pushing code, creating commits, rewriting history, or performing any git operations including analyzing uncommitted changes.
+description: Git workflow and commit guidelines. Trigger keywords: git, commit, push, .git, version control. MUST be activated before ANY git commit, push, or version control operation. Includes security scanning for secrets (API keys, tokens, .env files), commit message formatting with HEREDOC, logical commit grouping (docs, test, feat, fix, refactor, chore, build, deps), push behavior rules, safety rules for hooks and force pushes, CRITICAL safeguards for destructive operations (filter-branch, gc --prune, reset --hard), PR CI check analysis (gh pr checks, required vs non-blocking), and auto-merge limitations. Activate when user requests committing changes, pushing code, creating commits, rewriting history, or performing any git operations including analyzing uncommitted changes.
 ---
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119.
@@ -201,6 +201,34 @@ git reflog                    # Find lost commits
 git fsck --unreachable        # Find orphaned objects
 git fsck --lost-found         # Recover to .git/lost-found/
 ```
+
+## Pull Request CI Checks
+
+### Checking PR Status with `gh pr checks`
+
+Use `--required` to distinguish blocking vs non-blocking failures:
+
+```bash
+# Show only required (blocking) checks
+gh pr checks --required
+
+# Show all checks with status buckets (pass/fail/pending/skipping/cancel)
+gh pr checks --json name,state,bucket
+
+# Watch checks until they finish, exit on first failure
+gh pr checks --watch --fail-fast
+
+# Filter to just failed required checks
+gh pr checks --required --json name,state,bucket --jq '.[] | select(.bucket == "fail")'
+```
+
+Key fields: `name`, `state`, `bucket` (`pass`|`fail`|`pending`|`skipping`|`cancel`), `workflow`, `link`
+
+Exit codes: `0` = all passed, `1` = failures exist, `8` = checks still pending.
+
+### Auto-Merge Limitations
+
+`gh pr merge --auto` and Dependabot auto-merge require **branch protection rules** enabled on the repository. Without branch protection (required status checks, required reviews, etc.), GitHub has no merge conditions to evaluate, so auto-merge silently does nothing. If auto-merge isn't working, check `Settings > Branches > Branch protection rules` for the target branch.
 
 ## Philosophy
 
