@@ -7,6 +7,10 @@ fi
 if [ -d "$HOME/.local/bin" ] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
+# Add ~/.bun/bin to PATH (for bun-installed globals like opencode)
+if [ -d "$HOME/.bun/bin" ] && [[ ":$PATH:" != *":$HOME/.bun/bin:"* ]]; then
+    export PATH="$HOME/.bun/bin:$PATH"
+fi
 
 # Completion system
 autoload -U compinit && compinit
