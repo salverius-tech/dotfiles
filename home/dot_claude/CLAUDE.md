@@ -81,6 +81,7 @@
 ### Specialized
 - **Multi-Agent AI**: .spec/ dirs, STATUS.md, lessons/
 - **Development Philosophy**: BE BRIEF, autonomous execution, experiment-driven, fail-fast
+- **Skill Creator**: Create, evaluate, benchmark, and optimize Claude skills and their descriptions
 
 **Manual-only skills:**
 - **Prompt Engineering**: `/optimize-prompt`, `/prompt-help` commands
