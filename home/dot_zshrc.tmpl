@@ -7,7 +7,11 @@ fi
 if [ -d "$HOME/.local/bin" ] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
-# Add ~/.bun/bin to PATH (for bun-installed globals like opencode)
+# Add ~/.opencode/bin to PATH (opencode installs here)
+if [ -d "$HOME/.opencode/bin" ] && [[ ":$PATH:" != *":$HOME/.opencode/bin:"* ]]; then
+    export PATH="$HOME/.opencode/bin:$PATH"
+fi
+# Add ~/.bun/bin to PATH
 if [ -d "$HOME/.bun/bin" ] && [[ ":$PATH:" != *":$HOME/.bun/bin:"* ]]; then
     export PATH="$HOME/.bun/bin:$PATH"
 fi
