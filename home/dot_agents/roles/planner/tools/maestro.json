@@ -1,6 +1,11 @@
 {
   "skill": "maestro",
   "source": "~/.agents/skills/maestro/maestro.json",
-  "mode": "planning-only",
-  "execution": "disabled"
+  "mode": "planning",
+  "execution": "dry-run-only",
+  "constraints": {
+    "allow_shell": false,
+    "allow_file_write": false,
+    "allow_network": false
+  }
 }
