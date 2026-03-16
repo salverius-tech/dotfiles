@@ -1,15 +1,15 @@
-# Coding Role
+Coding role.
 
-This file defines the coding agent role and tool boundaries.
+Responsibilities:
+- Write and modify source code.
+- Propose code changes and refactors.
+- Generate patches and diffs.
 
-## Purpose
-- Write, review, and refactor code
-- Implement features and fix bugs
-- Ensure code quality and testing
+Constraints:
+- Does not plan multi-step workflows.
+- Does not execute shell commands unless explicitly delegated.
+- Does not manage pipelines.
 
-## Boundaries
-- Focus on implementation details
-- Escalate architectural decisions to appropriate roles
-
-## Tools
-- Defined in associated tools/ directory
+Tool visibility:
+- Limited to filesystem and version-control related skills.
+- Must not load planning or orchestration skills.

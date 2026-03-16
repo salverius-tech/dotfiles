@@ -1,3 +1,157 @@
 {
-  // Maestro skill card - coming soon
+  "name": "maestro",
+  "description": "Deterministic local execution service for shell commands, LLM inference, embeddings, vector operations, file I/O, and multi-step pipelines.",
+  "contract_version": "1.0",
+
+  "tools": [
+    {
+      "name": "run",
+      "description": "Execute a shell command and return stdout, stderr, and return code.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "command": { "type": "string" },
+          "timeout": { "type": "integer", "nullable": true },
+          "workdir": { "type": "string", "nullable": true },
+          "callback_url": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean", "nullable": true }
+        },
+        "required": ["contract_version", "command"]
+      }
+    },
+
+    {
+      "name": "llm",
+      "description": "Run a local or configured LLM inference.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "model": { "type": "string" },
+          "prompt": { "type": "string" },
+          "system": { "type": "string", "nullable": true },
+          "temperature": { "type": "number", "nullable": true },
+          "max_tokens": { "type": "integer", "nullable": true },
+          "backend": { "type": "string", "nullable": true },
+          "quantization": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean", "nullable": true }
+        },
+        "required": ["contract_version", "model", "prompt"]
+      }
+    },
+
+    {
+      "name": "embed",
+      "description": "Generate vector embeddings for text input.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "input": { "type": ["string", "array"] },
+          "model": { "type": "string" },
+          "dry_run": { "type": "boolean", "nullable": true }
+        },
+        "required": ["contract_version", "input", "model"]
+      }
+    },
+
+    {
+      "name": "vector.upsert",
+      "description": "Insert or update points in a vector collection.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "collection": { "type": "string" },
+          "points": { "type": "array" },
+          "backend": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean", "nullable": true }
+        },
+        "required": ["contract_version", "collection", "points"]
+      }
+    },
+
+    {
+      "name": "vector.search",
+      "description": "Search a vector collection using a query vector.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "collection": { "type": "string" },
+          "vector": { "type": "array" },
+          "limit": { "type": "integer" },
+          "filter": { "type": "object", "nullable": true },
+          "with_payload": { "type": "boolean", "nullable": true },
+          "with_vectors": { "type": "boolean", "nullable": true },
+          "backend": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean", "nullable": true }
+        },
+        "required": ["contract_version", "collection", "vector", "limit"]
+      }
+    },
+
+    {
+      "name": "vector.delete",
+      "description": "Delete points from a vector collection.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "collection": { "type": "string" },
+          "ids": { "type": "array" },
+          "backend": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean", "nullable": true }
+        },
+        "required": ["contract_version", "collection", "ids"]
+      }
+    },
+
+    {
+      "name": "file_read",
+      "description": "Read a file from the Maestro base directory.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "path": { "type": "string" },
+          "dry_run": { "type": "boolean", "nullable": true }
+        },
+        "required": ["contract_version", "path"]
+      }
+    },
+
+    {
+      "name": "file_write",
+      "description": "Write content to a file in the Maestro base directory.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "path": { "type": "string" },
+          "content": { "type": "string" },
+          "mode": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean", "nullable": true }
+        },
+        "required": ["contract_version", "path", "content"]
+      }
+    },
+
+    {
+      "name": "pipeline",
+      "description": "Execute a multi-step workflow with optional output chaining.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "steps": { "type": "array" },
+          "stop_on_error": { "type": "boolean", "nullable": true },
+          "callback_url": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean", "nullable": true }
+        },
+        "required": ["contract_version", "steps"]
+      }
+    }
+  ]
 }

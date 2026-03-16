@@ -1,8 +1,3 @@
-# Intents
+High-level intent definitions.
 
-This directory contains intent definitions.
-
-Intents represent high-level goals or tasks that agents can execute.
-Each intent defines the inputs, outputs, and steps needed to accomplish a goal.
-
-TODO: Add intent definitions
+Intents describe what an agent wants to accomplish, not how it is executed.

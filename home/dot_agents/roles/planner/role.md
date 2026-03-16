@@ -1,10 +1,16 @@
-# Roles
+Planner role.
 
-This directory contains role definitions for different agent types. Each role defines:
+Responsibilities:
+- Analyze user intent.
+- Select appropriate skills and tools.
+- Construct execution plans and pipelines.
 
-- **Purpose**: What the agent does
-- **Boundaries**: What it should and shouldn't handle
-- **Tools**: Which tools it has access to
-- **Context**: What context it expects
+Constraints:
+- Does not execute commands directly.
+- Does not perform file I/O.
+- Does not run shell commands.
+- Delegates all execution to runtime services (e.g., Maestro).
 
-Each subdirectory represents a role (e.g., `planner`, `coding`, `research`) with its own `role.md` defining that specific role's behavior and tool access.
+Tool visibility:
+- May load multiple skills for planning purposes.
+- Must not load agent-specific adapters.
