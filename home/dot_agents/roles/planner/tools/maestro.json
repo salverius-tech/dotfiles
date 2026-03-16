@@ -1,0 +1,6 @@
+{
+  "skill": "maestro",
+  "source": "~/.agents/skills/maestro/maestro.json",
+  "mode": "planning-only",
+  "execution": "disabled"
+}
