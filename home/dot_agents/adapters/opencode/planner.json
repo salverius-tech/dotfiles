@@ -1,0 +1,16 @@
+{
+  "agent": "opencode",
+  "role": "planner",
+  "tools": [
+    {
+      "name": "maestro",
+      "source": "~/.agents/roles/planner/tools/maestro.json",
+      "mode": "dry-run"
+    }
+  ],
+  "constraints": {
+    "allow_shell": false,
+    "allow_file_write": false,
+    "allow_network": false
+  }
+}
