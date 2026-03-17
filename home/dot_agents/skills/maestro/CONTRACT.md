@@ -1,60 +1,12 @@
 # Maestro Tool Contract
 
-> This document defines the authoritative interface contract for all Maestro tools.
-> Any tool that does not conform to this contract is invalid and must be fixed.
-
-## Required API Shape (OpenCode Runtime)
-
-Every Maestro tool **must** use this exact structure:
-
-```ts
-import { tool } from "@opencode-ai/plugin";
-
-const z = tool.schema;
-
-export const maestro_<name> = tool({
-  description: `<description>. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.`,
-  args: {
-    // Plain Zod fields (ZodRawShape) — OpenCode's fromPlugin wraps in z.object() internally
-  },
-  async execute(args, _context) {
-    // All env var access via getMaestroConfig() — never at module scope
-    // Must return a JSON string (not an object)
-  },
-});
-```
-
-## Required Fields
-
-| Field         | Type                               | Notes                                                      |
-| ------------- | ---------------------------------- | ---------------------------------------------------------- |
-| `description` | `string`                           | Must include env var requirement note                      |
-| `args`        | `ZodRawShape` (plain object)       | Plain Zod fields — `fromPlugin` wraps in `z.object()` internally |
-| `execute`     | `async (args, _context) => string` | Must return `JSON.stringify(...)`                          |
-
-## Forbidden Patterns
-
-These patterns **must never appear** in Maestro tool files:
-
-| Pattern                                    | Reason                                                                   |
-| ------------------------------------------ | ------------------------------------------------------------------------ |
-| `handler:` or `handler(`                   | Legacy API field                                                         |
-| `inputSchema:`                             | Legacy API field                                                         |
-| `schema:` (as tool field)                  | Legacy API field                                                         |
-| `argsSchema:`                              | Legacy API field                                                         |
-| `jsonSchemaToZodShape`                     | JSON-schema conversion helper                                            |
-| `zodForType`                               | JSON-schema conversion helper                                            |
-| `JsonSchemaProp`                           | JSON-schema conversion helper                                            |
-| `export default`                           | Must use named exports                                                   |
-| `process.env` outside `getMaestroConfig()` | Env access must be lazy                                                  |
-| `args: z.object(` or `args: s.object(`     | `fromPlugin` wraps args — double-wrapping causes `schema._zod.def` error |
-| `import { z } from "zod"`                  | Use `const z = tool.schema` instead                                      |
-| `z.record(z.unknown())` (single-arg form)  | Zod v4 sets arg as `keyType`, leaving `valueType` undefined — use `z.record(z.string(), z.unknown())` |
+> This document defines the canonical, runtime-agnostic interface contract for all Maestro tools.
+> Any tool implementation that does not conform to this contract is invalid and must be fixed.
 
 ## Environment Variable Model
 
-All environment variable reads **must** occur inside `getMaestroConfig()`, which is called
-lazily within `execute()`. This ensures:
+All environment variable reads **must** occur lazily at invocation time, not at module load.
+This ensures:
 
 1. Module loading never fails due to missing env vars
 2. Tool registration succeeds even without configuration
@@ -67,39 +19,41 @@ Required env vars:
 
 ## Contract Version
 
-The `contract_version: "1.0"` field is injected automatically by `callMaestro()` into every
-POST request body. Individual tools **must not** set `contract_version` in their args schema
-or manually include it in request bodies.
+Every POST request body **must** include `contract_version: "1.0"`. Requests without
+`contract_version` are rejected with `422 Unprocessable Entity`.
+
+GET and DELETE endpoints do not require `contract_version`.
+
+**Current version:** `"1.0"`
 
 ## Return Value Contract
 
-- All `execute()` functions must return a `string` (JSON-serialized)
-- Use `JSON.stringify(data)` — never return raw objects, classes, or `undefined`
+- All tool execute functions must return a JSON string (serialized)
+- Never return raw objects, classes, or `undefined`
 - No circular structures
 
 ## Dry-Run Support
 
-Tools supporting dry-run **must** check `args.dry_run` before calling `callMaestro()` and
-return a mock response:
-
-```ts
-if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
-```
+Tools supporting dry-run **must** check a `dry_run` flag before performing side effects
+and return a mock response with `"status": "planned"` when set.
 
 ## Export Rules
 
-- Every tool must be a **named export**: `export const maestro_<name> = tool({...})`
+- Every tool must be a **named export**
 - No default exports
 - No nested exports (e.g. `export const tools = { ... }`)
 - One tool per export statement
 
 ## Schema Definition File (maestro.json)
 
-The skill schema file `maestro.json` must stay synchronized with the TypeScript implementation.
-It defines the machine-readable tool registry for agent planners and must include an entry for
-every tool exported from `maestro.ts`.
+The canonical schema file `maestro.json` defines the machine-readable tool registry.
+It must include an entry for every tool and stay synchronized with all runtime
+implementations.
 
 ## Validation
 
-Run `check-contract.sh` to verify compliance. Run `tests/validate-tools.sh` to exercise
-all tools via dry-run. Both must pass before changes are committed.
+Run `tests/validate-tools.sh` to exercise all tools against a live Maestro server.
+This test suite is runtime-agnostic (pure HTTP) and must pass before changes are committed.
+
+Runtime-specific adapters may provide additional validation scripts (e.g. contract
+compliance checks, schema sync verification).

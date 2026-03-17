@@ -11,22 +11,32 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ADAPTER_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Resolve paths — handle both source (dot_) and deployed (~/) layouts
-if [[ -f "$SKILL_DIR/maestro.json" ]]; then
-  SCHEMA="$SKILL_DIR/maestro.json"
-else
-  echo "ERROR: maestro.json not found in $SKILL_DIR"
+# Resolve canonical maestro.json from the skill directory
+# From adapters/opencode/maestro/tests/ → skills/maestro/
+SKILL_DIR=""
+for candidate in \
+  "$HOME/.agents/skills/maestro" \
+  "$ADAPTER_DIR/../../../skills/maestro"; do
+  if [[ -d "$candidate" ]]; then
+    SKILL_DIR="$(cd "$candidate" && pwd)"
+    break
+  fi
+done
+
+if [[ -z "$SKILL_DIR" || ! -f "$SKILL_DIR/maestro.json" ]]; then
+  echo "ERROR: maestro.json not found in skills/maestro/"
   exit 1
 fi
+SCHEMA="$SKILL_DIR/maestro.json"
 
 # Find maestro.ts — check common locations
 TS_FILE=""
 for candidate in \
   "$HOME/.config/opencode/tools/maestro.ts" \
-  "$(cd "$SKILL_DIR/../../../private_dot_config/opencode/tools" 2>/dev/null && pwd)/maestro.ts" \
-  "$(cd "$SKILL_DIR/../../.." 2>/dev/null && pwd)/private_dot_config/opencode/tools/maestro.ts"; do
+  "$ADAPTER_DIR/../../../../private_dot_config/opencode/tools/maestro.ts" \
+  "$(cd "$ADAPTER_DIR/../../../.." 2>/dev/null && pwd)/private_dot_config/opencode/tools/maestro.ts"; do
   if [[ -f "$candidate" ]]; then
     TS_FILE="$candidate"
     break

@@ -17,7 +17,7 @@ TS_FILE="${1:-}"
 if [[ -z "$TS_FILE" ]]; then
   for candidate in \
     "$HOME/.config/opencode/tools/maestro.ts" \
-    "$SCRIPT_DIR/../../../private_dot_config/opencode/tools/maestro.ts"; do
+    "$SCRIPT_DIR/../../../../private_dot_config/opencode/tools/maestro.ts"; do
     if [[ -f "$candidate" ]]; then
       TS_FILE="$candidate"
       break
