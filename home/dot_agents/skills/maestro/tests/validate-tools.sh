@@ -63,7 +63,7 @@ call "maestro_run" POST "/run" \
 
 # 3. Pipeline (dry-run)
 call "maestro_pipeline" POST "/pipeline" \
-  '{"contract_version":"1.0","steps":[],"dry_run":true}'
+  '{"contract_version":"1.0","steps":[{"action":"run","params":{"command":"echo test"}}],"dry_run":true}'
 
 # 4. LLM (dry-run)
 call "maestro_llm" POST "/llm" \

@@ -25,8 +25,8 @@ fi
 TS_FILE=""
 for candidate in \
   "$HOME/.config/opencode/tools/maestro.ts" \
-  "$(cd "$SKILL_DIR/../../../../private_dot_config/opencode/tools" 2>/dev/null && pwd)/maestro.ts" \
-  "$(cd "$SKILL_DIR/../../../.." 2>/dev/null && pwd)/private_dot_config/opencode/tools/maestro.ts"; do
+  "$(cd "$SKILL_DIR/../../../private_dot_config/opencode/tools" 2>/dev/null && pwd)/maestro.ts" \
+  "$(cd "$SKILL_DIR/../../.." 2>/dev/null && pwd)/private_dot_config/opencode/tools/maestro.ts"; do
   if [[ -f "$candidate" ]]; then
     TS_FILE="$candidate"
     break

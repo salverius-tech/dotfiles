@@ -83,8 +83,8 @@ if [[ -n "$env_lines" ]]; then
     while IFS= read -r line; do
       linenum=$(echo "$line" | cut -d: -f1)
       if [[ $linenum -lt $func_start ]]; then continue; fi
-      opens=$(echo "$line" | grep -o '{' | wc -l)
-      closes=$(echo "$line" | grep -o '}' | wc -l)
+      opens=$(echo "$line" | { grep -o '{' || true; } | wc -l)
+      closes=$(echo "$line" | { grep -o '}' || true; } | wc -l)
       depth=$((depth + opens - closes))
       if [[ $opens -gt 0 ]]; then started=true; fi
       if $started && [[ $depth -le 0 ]]; then
