@@ -40,7 +40,8 @@ async function callMaestro(path: string, body?: Record<string, unknown>) {
     throw new Error(`Maestro error (${data.status}): ${data.error ?? "unknown error"}`);
   }
 
-  return data;
+  // IMPORTANT: return only JSON-safe payload
+  return data.result ?? data;
 }
 
 /* -------------------------
