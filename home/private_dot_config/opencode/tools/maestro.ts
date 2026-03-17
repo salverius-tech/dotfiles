@@ -1,6 +1,6 @@
 import { tool } from "@opencode-ai/plugin";
 
-const s = tool.schema;
+const z = tool.schema;
 
 // Constraint enforcement model:
 // Role/adapter JSON files (e.g. planner/tools/maestro.json) declare constraints
@@ -84,13 +84,13 @@ const ENV_NOTE = "Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the
 
 export const maestro_run = tool({
   description: `Execute a Maestro run. ${ENV_NOTE}`,
-  args: {
-    command: s.string(),
-    timeout: s.number().int().nullable().optional(),
-    workdir: s.string().nullable().optional(),
-    callback_url: s.string().nullable().optional(),
-    dry_run: s.boolean().nullable().optional(),
-  },
+  args: z.object({
+    command: z.string(),
+    timeout: z.number().int().nullable().optional(),
+    workdir: z.string().nullable().optional(),
+    callback_url: z.string().nullable().optional(),
+    dry_run: z.boolean().nullable().optional(),
+  }),
   async execute(args, _context) {
     if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/run", { body: { ...args } });
@@ -99,12 +99,12 @@ export const maestro_run = tool({
 
 export const maestro_pipeline = tool({
   description: `Execute a Maestro pipeline. ${ENV_NOTE}`,
-  args: {
-    steps: s.array(s.unknown()),
-    stop_on_error: s.boolean().nullable().optional(),
-    callback_url: s.string().nullable().optional(),
-    dry_run: s.boolean().nullable().optional(),
-  },
+  args: z.object({
+    steps: z.array(z.unknown()),
+    stop_on_error: z.boolean().nullable().optional(),
+    callback_url: z.string().nullable().optional(),
+    dry_run: z.boolean().nullable().optional(),
+  }),
   async execute(args, _context) {
     if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/pipeline", { body: { ...args } });
@@ -113,16 +113,16 @@ export const maestro_pipeline = tool({
 
 export const maestro_llm = tool({
   description: `Invoke an LLM via Maestro. ${ENV_NOTE}`,
-  args: {
-    model: s.string(),
-    prompt: s.string(),
-    system: s.string().nullable().optional(),
-    temperature: s.number().nullable().optional(),
-    max_tokens: s.number().int().nullable().optional(),
-    backend: s.string().nullable().optional(),
-    quantization: s.string().nullable().optional(),
-    dry_run: s.boolean().nullable().optional(),
-  },
+  args: z.object({
+    model: z.string(),
+    prompt: z.string(),
+    system: z.string().nullable().optional(),
+    temperature: z.number().nullable().optional(),
+    max_tokens: z.number().int().nullable().optional(),
+    backend: z.string().nullable().optional(),
+    quantization: z.string().nullable().optional(),
+    dry_run: z.boolean().nullable().optional(),
+  }),
   async execute(args, _context) {
     if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/llm", { body: { ...args } });
@@ -131,11 +131,11 @@ export const maestro_llm = tool({
 
 export const maestro_embed = tool({
   description: `Generate embeddings via Maestro. ${ENV_NOTE}`,
-  args: {
-    input: s.union([s.string(), s.array(s.string())]),
-    model: s.string().nullable().optional(),
-    dry_run: s.boolean().nullable().optional(),
-  },
+  args: z.object({
+    input: z.union([z.string(), z.array(z.string())]),
+    model: z.string().nullable().optional(),
+    dry_run: z.boolean().nullable().optional(),
+  }),
   async execute(args, _context) {
     if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/embed", { body: { ...args } });
@@ -144,12 +144,12 @@ export const maestro_embed = tool({
 
 export const maestro_vector_upsert = tool({
   description: `Upsert vectors into Maestro storage. ${ENV_NOTE}`,
-  args: {
-    collection: s.string(),
-    points: s.array(s.unknown()),
-    backend: s.string().nullable().optional(),
-    dry_run: s.boolean().nullable().optional(),
-  },
+  args: z.object({
+    collection: z.string(),
+    points: z.array(z.unknown()),
+    backend: z.string().nullable().optional(),
+    dry_run: z.boolean().nullable().optional(),
+  }),
   async execute(args, _context) {
     if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/vector/upsert", { body: { ...args } });
@@ -158,16 +158,16 @@ export const maestro_vector_upsert = tool({
 
 export const maestro_vector_search = tool({
   description: `Search vectors via Maestro. ${ENV_NOTE}`,
-  args: {
-    collection: s.string(),
-    vector: s.array(s.number()),
-    limit: s.number().int(),
-    filter: s.record(s.unknown()).nullable().optional(),
-    with_payload: s.boolean().nullable().optional(),
-    with_vectors: s.boolean().nullable().optional(),
-    backend: s.string().nullable().optional(),
-    dry_run: s.boolean().nullable().optional(),
-  },
+  args: z.object({
+    collection: z.string(),
+    vector: z.array(z.number()),
+    limit: z.number().int(),
+    filter: z.record(z.unknown()).nullable().optional(),
+    with_payload: z.boolean().nullable().optional(),
+    with_vectors: z.boolean().nullable().optional(),
+    backend: z.string().nullable().optional(),
+    dry_run: z.boolean().nullable().optional(),
+  }),
   async execute(args, _context) {
     if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/vector/search", { body: { ...args } });
@@ -176,12 +176,12 @@ export const maestro_vector_search = tool({
 
 export const maestro_vector_delete = tool({
   description: `Delete vectors via Maestro. ${ENV_NOTE}`,
-  args: {
-    collection: s.string(),
-    ids: s.array(s.unknown()),
-    backend: s.string().nullable().optional(),
-    dry_run: s.boolean().nullable().optional(),
-  },
+  args: z.object({
+    collection: z.string(),
+    ids: z.array(z.unknown()),
+    backend: z.string().nullable().optional(),
+    dry_run: z.boolean().nullable().optional(),
+  }),
   async execute(args, _context) {
     if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/vector/delete", { body: { ...args } });
@@ -190,10 +190,10 @@ export const maestro_vector_delete = tool({
 
 export const maestro_file_read = tool({
   description: `Read a file via Maestro. ${ENV_NOTE}`,
-  args: {
-    path: s.string(),
-    dry_run: s.boolean().nullable().optional(),
-  },
+  args: z.object({
+    path: z.string(),
+    dry_run: z.boolean().nullable().optional(),
+  }),
   async execute(args, _context) {
     if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/file/read", { body: { ...args } });
@@ -202,12 +202,12 @@ export const maestro_file_read = tool({
 
 export const maestro_file_write = tool({
   description: `Write a file via Maestro. ${ENV_NOTE}`,
-  args: {
-    path: s.string(),
-    content: s.string(),
-    mode: s.string().nullable().optional(),
-    dry_run: s.boolean().nullable().optional(),
-  },
+  args: z.object({
+    path: z.string(),
+    content: z.string(),
+    mode: z.string().nullable().optional(),
+    dry_run: z.boolean().nullable().optional(),
+  }),
   async execute(args, _context) {
     if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/file/write", { body: { ...args } });
@@ -216,7 +216,7 @@ export const maestro_file_write = tool({
 
 export const maestro_health = tool({
   description: `Check Maestro health. ${ENV_NOTE}`,
-  args: {},
+  args: z.object({}),
   async execute(_args, _context) {
     return callMaestro("/health");
   },
@@ -224,9 +224,9 @@ export const maestro_health = tool({
 
 export const maestro_vector_collections_list = tool({
   description: `List all vector collections. ${ENV_NOTE}`,
-  args: {
-    backend: s.string().nullable().optional(),
-  },
+  args: z.object({
+    backend: z.string().nullable().optional(),
+  }),
   async execute(args, _context) {
     const query = args.backend ? `?backend=${args.backend}` : "";
     return callMaestro(`/vector/collections${query}`);
@@ -235,14 +235,14 @@ export const maestro_vector_collections_list = tool({
 
 export const maestro_vector_collections_create = tool({
   description: `Create a vector collection. ${ENV_NOTE}`,
-  args: {
-    name: s.string(),
-    vector_size: s.number().int(),
-    distance: s.string().nullable().optional(),
-    if_not_exists: s.boolean().nullable().optional(),
-    options: s.record(s.unknown()).nullable().optional(),
-    backend: s.string().nullable().optional(),
-  },
+  args: z.object({
+    name: z.string(),
+    vector_size: z.number().int(),
+    distance: z.string().nullable().optional(),
+    if_not_exists: z.boolean().nullable().optional(),
+    options: z.record(z.unknown()).nullable().optional(),
+    backend: z.string().nullable().optional(),
+  }),
   async execute(args, _context) {
     return callMaestro("/vector/collections", { body: { ...args } });
   },
@@ -250,9 +250,9 @@ export const maestro_vector_collections_create = tool({
 
 export const maestro_vector_collections_delete = tool({
   description: `Delete a vector collection. ${ENV_NOTE}`,
-  args: {
-    name: s.string(),
-  },
+  args: z.object({
+    name: z.string(),
+  }),
   async execute(args, _context) {
     return callMaestro(`/vector/collections/${encodeURIComponent(args.name)}`, { method: "DELETE" });
   },

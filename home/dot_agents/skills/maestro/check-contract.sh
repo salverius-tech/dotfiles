@@ -62,12 +62,6 @@ check_forbidden '\bJsonSchemaProp\b' "JSON-schema helper 'JsonSchemaProp'"
 # Forbidden export patterns
 check_forbidden '^\s*export\s+default\b' "Default export (must use named exports)"
 
-# Double-wrapped args (must use plain ZodRawShape, not z.object)
-check_forbidden 'args:\s*[sz]\.object\(' "Double-wrapped args (use plain object, not z.object/s.object)"
-
-# Direct zod import (must use tool.schema)
-check_forbidden 'import\s*\{[^}]*\bz\b[^}]*\}\s*from\s*"zod"' "Direct zod import (use const s = tool.schema instead)"
-
 # Env var access outside getMaestroConfig
 # Match process.env that is NOT inside the getMaestroConfig function
 # Strategy: find all process.env lines, then exclude those within getMaestroConfig

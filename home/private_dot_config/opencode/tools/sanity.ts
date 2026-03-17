@@ -1,11 +1,11 @@
 // ~/.config/opencode/tools/sanity.ts
 import { tool } from "@opencode-ai/plugin";
 
-const s = tool.schema;
+const z = tool.schema;
 
 export const sanity_ping = tool({
   description: "Sanity check tool",
-  args: {},
+  args: z.object({}),
   async execute(_args, _context) {
     return "ok";
   },
