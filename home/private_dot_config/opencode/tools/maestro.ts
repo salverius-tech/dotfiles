@@ -63,8 +63,8 @@ function zodForType(t: string, items?: { type: string }): ZodTypeAny {
   }
 }
 
-// Convert a JSON Schema properties block into a z.object() schema
-function jsonSchemaToZod(def: ToolSchema): ReturnType<typeof z.object> {
+// Convert a JSON Schema properties block into a ZodRawShape for tool args
+function jsonSchemaToZodShape(def: ToolSchema): Record<string, ZodTypeAny> {
   const shape: Record<string, ZodTypeAny> = {};
 
   for (const [key, prop] of Object.entries(def.properties)) {
@@ -98,17 +98,17 @@ function jsonSchemaToZod(def: ToolSchema): ReturnType<typeof z.object> {
     shape[key] = field;
   }
 
-  return z.object(shape);
+  return shape;
 }
 
-// Shared HTTP executor
+// Shared HTTP executor — returns a JSON string for OpenCode tool results
 async function callMaestro(
   path: string,
   options?: {
     body?: Record<string, unknown>;
     method?: "GET" | "POST" | "DELETE";
   },
-) {
+): Promise<string> {
   const { baseUrl, apiKey, timeoutMs } = getMaestroConfig();
   const body = options?.body;
   const method = options?.method ?? (body ? "POST" : "GET");
@@ -155,16 +155,7 @@ async function callMaestro(
     );
   }
 
-  // Normalize return value for OpenCode
-  if (data === undefined || data === null) {
-    return {};
-  }
-
-  if (typeof data !== "object") {
-    return { value: data };
-  }
-
-  return data;
+  return JSON.stringify(data ?? {});
 }
 
 /* -------------------------
@@ -174,9 +165,9 @@ async function callMaestro(
 export const run = tool({
   description:
     "Execute a Maestro run. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
-  schema: jsonSchemaToZod(maestroSchemas.run as ToolSchema),
-  async execute(args: Record<string, unknown>) {
-    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+  args: jsonSchemaToZodShape(maestroSchemas.run as ToolSchema),
+  async execute(args) {
+    if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/run", { body: args });
   },
 });
@@ -184,9 +175,9 @@ export const run = tool({
 export const pipeline = tool({
   description:
     "Execute a Maestro pipeline. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
-  schema: jsonSchemaToZod(maestroSchemas.pipeline as ToolSchema),
-  async execute(args: Record<string, unknown>) {
-    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+  args: jsonSchemaToZodShape(maestroSchemas.pipeline as ToolSchema),
+  async execute(args) {
+    if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/pipeline", { body: args });
   },
 });
@@ -194,9 +185,9 @@ export const pipeline = tool({
 export const llm = tool({
   description:
     "Invoke an LLM via Maestro. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
-  schema: jsonSchemaToZod(maestroSchemas.llm as ToolSchema),
-  async execute(args: Record<string, unknown>) {
-    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+  args: jsonSchemaToZodShape(maestroSchemas.llm as ToolSchema),
+  async execute(args) {
+    if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/llm", { body: args });
   },
 });
@@ -204,9 +195,9 @@ export const llm = tool({
 export const embed = tool({
   description:
     "Generate embeddings via Maestro. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
-  schema: jsonSchemaToZod(maestroSchemas.embed as ToolSchema),
-  async execute(args: Record<string, unknown>) {
-    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+  args: jsonSchemaToZodShape(maestroSchemas.embed as ToolSchema),
+  async execute(args) {
+    if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/embed", { body: args });
   },
 });
@@ -214,9 +205,9 @@ export const embed = tool({
 export const vector_upsert = tool({
   description:
     "Upsert vectors into Maestro storage. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
-  schema: jsonSchemaToZod(maestroSchemas["vector.upsert"] as ToolSchema),
-  async execute(args: Record<string, unknown>) {
-    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+  args: jsonSchemaToZodShape(maestroSchemas["vector.upsert"] as ToolSchema),
+  async execute(args) {
+    if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/vector/upsert", { body: args });
   },
 });
@@ -224,9 +215,9 @@ export const vector_upsert = tool({
 export const vector_search = tool({
   description:
     "Search vectors via Maestro. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
-  schema: jsonSchemaToZod(maestroSchemas["vector.search"] as ToolSchema),
-  async execute(args: Record<string, unknown>) {
-    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+  args: jsonSchemaToZodShape(maestroSchemas["vector.search"] as ToolSchema),
+  async execute(args) {
+    if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/vector/search", { body: args });
   },
 });
@@ -234,9 +225,9 @@ export const vector_search = tool({
 export const vector_delete = tool({
   description:
     "Delete vectors via Maestro. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
-  schema: jsonSchemaToZod(maestroSchemas["vector.delete"] as ToolSchema),
-  async execute(args: Record<string, unknown>) {
-    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+  args: jsonSchemaToZodShape(maestroSchemas["vector.delete"] as ToolSchema),
+  async execute(args) {
+    if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/vector/delete", { body: args });
   },
 });
@@ -244,9 +235,9 @@ export const vector_delete = tool({
 export const file_read = tool({
   description:
     "Read a file via Maestro. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
-  schema: jsonSchemaToZod(maestroSchemas.file_read as ToolSchema),
-  async execute(args: Record<string, unknown>) {
-    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+  args: jsonSchemaToZodShape(maestroSchemas.file_read as ToolSchema),
+  async execute(args) {
+    if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/file/read", { body: args });
   },
 });
@@ -254,9 +245,9 @@ export const file_read = tool({
 export const file_write = tool({
   description:
     "Write a file via Maestro. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
-  schema: jsonSchemaToZod(maestroSchemas.file_write as ToolSchema),
-  async execute(args: Record<string, unknown>) {
-    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+  args: jsonSchemaToZodShape(maestroSchemas.file_write as ToolSchema),
+  async execute(args) {
+    if (args.dry_run) return JSON.stringify({ ok: true, dry_run: true, ...args });
     return callMaestro("/file/write", { body: args });
   },
 });
@@ -264,7 +255,7 @@ export const file_write = tool({
 export const health = tool({
   description:
     "Check Maestro health. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
-  schema: z.object({}),
+  args: {},
   async execute() {
     return callMaestro("/health");
   },
@@ -273,10 +264,10 @@ export const health = tool({
 export const vector_collections_list = tool({
   description:
     "List all vector collections. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
-  schema: jsonSchemaToZod(
+  args: jsonSchemaToZodShape(
     maestroSchemas["vector.collections.list"] as ToolSchema,
   ),
-  async execute(args: Record<string, unknown>) {
+  async execute(args) {
     const query = args.backend ? `?backend=${args.backend}` : "";
     return callMaestro(`/vector/collections${query}`);
   },
@@ -285,10 +276,10 @@ export const vector_collections_list = tool({
 export const vector_collections_create = tool({
   description:
     "Create a vector collection. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
-  schema: jsonSchemaToZod(
+  args: jsonSchemaToZodShape(
     maestroSchemas["vector.collections.create"] as ToolSchema,
   ),
-  async execute(args: Record<string, unknown>) {
+  async execute(args) {
     return callMaestro("/vector/collections", { body: args });
   },
 });
@@ -296,11 +287,11 @@ export const vector_collections_create = tool({
 export const vector_collections_delete = tool({
   description:
     "Delete a vector collection. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
-  schema: jsonSchemaToZod(
+  args: jsonSchemaToZodShape(
     maestroSchemas["vector.collections.delete"] as ToolSchema,
   ),
-  async execute(args: Record<string, unknown>) {
-    const { name } = args as { name: string };
+  async execute(args) {
+    const name = args.name as string;
     return callMaestro(
       `/vector/collections/${encodeURIComponent(name)}`,
       { method: "DELETE" },

@@ -1,111 +1,111 @@
 {
   "run": {
     "properties": {
-      "command": { "type": "string" },
-      "timeout": { "type": "integer", "nullable": true },
-      "workdir": { "type": "string", "nullable": true },
-      "callback_url": { "type": "string", "nullable": true },
-      "dry_run": { "type": "boolean", "nullable": true }
+      "command": { "type": "string", "description": "Shell command to execute" },
+      "timeout": { "type": "integer", "nullable": true, "description": "Max seconds before the command is killed (default 30, max 600)" },
+      "workdir": { "type": "string", "nullable": true, "description": "Working directory (defaults to executor root)" },
+      "callback_url": { "type": "string", "nullable": true, "description": "Optional webhook URL to POST results to on completion" },
+      "dry_run": { "type": "boolean", "nullable": true, "description": "When true, return the execution plan without performing any side effects" }
     },
     "required": ["command"]
   },
   "llm": {
     "properties": {
-      "model": { "type": "string" },
-      "prompt": { "type": "string" },
-      "system": { "type": "string", "nullable": true },
-      "temperature": { "type": "number", "nullable": true },
-      "max_tokens": { "type": "integer", "nullable": true },
-      "backend": { "type": "string", "nullable": true },
-      "quantization": { "type": "string", "nullable": true },
-      "dry_run": { "type": "boolean", "nullable": true }
+      "model": { "type": "string", "description": "Model tag, e.g. 'llama3.1:13b'" },
+      "prompt": { "type": "string", "description": "Prompt text to send to the model" },
+      "system": { "type": "string", "nullable": true, "description": "Optional system message" },
+      "temperature": { "type": "number", "nullable": true, "description": "Sampling temperature (0.0-2.0, default 0.7)" },
+      "max_tokens": { "type": "integer", "nullable": true, "description": "Max tokens to generate (1-32768, default 1024)" },
+      "backend": { "type": "string", "nullable": true, "description": "Force a specific backend. If omitted the executor chooses." },
+      "quantization": { "type": "string", "nullable": true, "description": "Quantization hint, e.g. 'q4_k_m', 'fp16'" },
+      "dry_run": { "type": "boolean", "nullable": true, "description": "When true, return the execution plan without performing any side effects" }
     },
     "required": ["model", "prompt"]
   },
   "embed": {
     "properties": {
       "input": { "type": ["string", "array"], "items": { "type": "string" }, "description": "Text to embed. A single string or an array of strings." },
-      "model": { "type": "string" },
-      "dry_run": { "type": "boolean", "nullable": true }
+      "model": { "type": "string", "nullable": true, "description": "Embedding model tag (default: nomic-embed-text)" },
+      "dry_run": { "type": "boolean", "nullable": true, "description": "When true, return the execution plan without performing any side effects" }
     },
-    "required": ["input", "model"]
+    "required": ["input"]
   },
   "vector.upsert": {
     "properties": {
-      "collection": { "type": "string" },
-      "points": { "type": "array" },
-      "backend": { "type": "string", "nullable": true },
-      "dry_run": { "type": "boolean", "nullable": true }
+      "collection": { "type": "string", "description": "Target collection name" },
+      "points": { "type": "array", "description": "Points to upsert (id, vector, payload)" },
+      "backend": { "type": "string", "nullable": true, "description": "Force a specific vector backend" },
+      "dry_run": { "type": "boolean", "nullable": true, "description": "When true, return the execution plan without performing any side effects" }
     },
     "required": ["collection", "points"]
   },
   "vector.search": {
     "properties": {
-      "collection": { "type": "string" },
-      "vector": { "type": "array" },
-      "limit": { "type": "integer" },
-      "filter": { "type": "object", "nullable": true },
-      "with_payload": { "type": "boolean", "nullable": true },
-      "with_vectors": { "type": "boolean", "nullable": true },
-      "backend": { "type": "string", "nullable": true },
-      "dry_run": { "type": "boolean", "nullable": true }
+      "collection": { "type": "string", "description": "Target collection name" },
+      "vector": { "type": "array", "description": "Query vector" },
+      "limit": { "type": "integer", "description": "Max results to return (1-1000, default 10)" },
+      "filter": { "type": "object", "nullable": true, "description": "Optional filter conditions" },
+      "with_payload": { "type": "boolean", "nullable": true, "description": "Include payload in results (default true)" },
+      "with_vectors": { "type": "boolean", "nullable": true, "description": "Include vectors in results (default false)" },
+      "backend": { "type": "string", "nullable": true, "description": "Force a specific vector backend" },
+      "dry_run": { "type": "boolean", "nullable": true, "description": "When true, return the execution plan without performing any side effects" }
     },
     "required": ["collection", "vector", "limit"]
   },
   "vector.delete": {
     "properties": {
-      "collection": { "type": "string" },
-      "ids": { "type": "array" },
-      "backend": { "type": "string", "nullable": true },
-      "dry_run": { "type": "boolean", "nullable": true }
+      "collection": { "type": "string", "description": "Target collection name" },
+      "ids": { "type": "array", "description": "Point IDs to delete" },
+      "backend": { "type": "string", "nullable": true, "description": "Force a specific vector backend" },
+      "dry_run": { "type": "boolean", "nullable": true, "description": "When true, return the execution plan without performing any side effects" }
     },
     "required": ["collection", "ids"]
   },
   "file_read": {
     "properties": {
-      "path": { "type": "string" },
-      "dry_run": { "type": "boolean", "nullable": true }
+      "path": { "type": "string", "description": "Relative path within MAESTRO_FILE_BASE_DIR" },
+      "dry_run": { "type": "boolean", "nullable": true, "description": "When true, return the execution plan without performing any side effects" }
     },
     "required": ["path"]
   },
   "file_write": {
     "properties": {
-      "path": { "type": "string" },
-      "content": { "type": "string" },
-      "mode": { "type": "string", "nullable": true },
-      "dry_run": { "type": "boolean", "nullable": true }
+      "path": { "type": "string", "description": "Relative path within MAESTRO_FILE_BASE_DIR" },
+      "content": { "type": "string", "description": "Text content to write" },
+      "mode": { "type": "string", "nullable": true, "description": "Write mode: overwrite (default) or append" },
+      "dry_run": { "type": "boolean", "nullable": true, "description": "When true, return the execution plan without performing any side effects" }
     },
     "required": ["path", "content"]
   },
   "pipeline": {
     "properties": {
-      "steps": { "type": "array" },
-      "stop_on_error": { "type": "boolean", "nullable": true },
-      "callback_url": { "type": "string", "nullable": true },
-      "dry_run": { "type": "boolean", "nullable": true }
+      "steps": { "type": "array", "description": "Ordered list of pipeline steps. Each step: {action, params, depends_on?}" },
+      "stop_on_error": { "type": "boolean", "nullable": true, "description": "Halt pipeline on first step failure (default true)" },
+      "callback_url": { "type": "string", "nullable": true, "description": "Optional webhook URL to POST results to on completion" },
+      "dry_run": { "type": "boolean", "nullable": true, "description": "When true, return the execution plan without performing any side effects" }
     },
     "required": ["steps"]
   },
   "vector.collections.list": {
     "properties": {
-      "backend": { "type": "string", "nullable": true, "description": "Target a specific vector backend." }
+      "backend": { "type": "string", "nullable": true, "description": "Target a specific vector backend" }
     },
     "required": []
   },
   "vector.collections.create": {
     "properties": {
-      "name": { "type": "string", "description": "Collection name." },
-      "vector_size": { "type": "integer", "description": "Dimensionality of vectors (e.g. 768)." },
-      "distance": { "type": "string", "nullable": true, "description": "Distance metric: cosine, euclid, dot, manhattan." },
-      "if_not_exists": { "type": "boolean", "nullable": true, "description": "If true, do not error when collection already exists." },
-      "options": { "type": "object", "nullable": true },
-      "backend": { "type": "string", "nullable": true }
+      "name": { "type": "string", "description": "Collection name" },
+      "vector_size": { "type": "integer", "description": "Dimensionality of vectors (e.g. 768)" },
+      "distance": { "type": "string", "nullable": true, "description": "Distance metric: cosine (default), euclid, dot, manhattan" },
+      "if_not_exists": { "type": "boolean", "nullable": true, "description": "If true, do not error when collection already exists" },
+      "options": { "type": "object", "nullable": true, "description": "Advanced backend-specific options" },
+      "backend": { "type": "string", "nullable": true, "description": "Force a specific vector backend" }
     },
     "required": ["name", "vector_size"]
   },
   "vector.collections.delete": {
     "properties": {
-      "name": { "type": "string", "description": "Name of the collection to delete." }
+      "name": { "type": "string", "description": "Name of the collection to delete" }
     },
     "required": ["name"]
   }
