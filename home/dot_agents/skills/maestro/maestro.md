@@ -240,7 +240,7 @@ available embed backend. There is no `backend` field on embed requests.
 > return HTTP 400. Use sequential integers (1, 2, 3...) for point IDs.
 >
 > **Payload size:** Large vectors (e.g. 768-dim floats) in a single upsert call may exceed
-> OpenCode's tool call payload limit, causing the call to abort. For high-dimensional vectors,
+> the host runtime's tool call payload limit, causing the call to abort. For high-dimensional vectors,
 > use a **pipeline** to embed + upsert server-side (see embed→upsert example in the Pipeline
 > section). This avoids the LLM having to generate hundreds of float values in tool call args.
 

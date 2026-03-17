@@ -21,7 +21,8 @@ The canonical skill schemas live at `~/.agents/skills/maestro/`.
 
 ## Planner Configuration
 
-| File             | Purpose                                      |
-| ---------------- | -------------------------------------------- |
-| `planner.json`   | Role-adapter binding for planner agent       |
-| `tools/maestro.json` | Reduced-surface schema for planning mode |
+| File           | Purpose                                |
+| -------------- | -------------------------------------- |
+| `planner.json` | Role-adapter binding for planner agent |
+
+The planner role's tool schema is defined at `~/.agents/roles/planner/tools/maestro.json`.

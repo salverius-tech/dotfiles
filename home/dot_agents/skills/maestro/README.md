@@ -40,8 +40,7 @@ Deterministic local execution service for shell commands, LLM inference, embeddi
 ## Architecture
 
 This skill defines the canonical, runtime-agnostic Maestro tool schemas and API documentation.
-Runtime-specific adapters (e.g. for OpenCode, Claude, Copilot) live in `~/.agents/adapters/`
-and are responsible for mapping these schemas to their respective tool APIs.
+Runtime-specific integrations are managed outside this skill directory.
 
 ```
 skills/maestro/
