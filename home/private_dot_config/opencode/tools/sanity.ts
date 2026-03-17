@@ -5,7 +5,7 @@ const z = tool.schema;
 
 export const sanity_ping = tool({
   description: "Sanity check tool",
-  args: z.object({}),
+  args: {},
   async execute(_args, _context) {
     return "ok";
   },

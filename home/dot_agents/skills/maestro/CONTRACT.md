@@ -14,9 +14,9 @@ const z = tool.schema;
 
 export const maestro_<name> = tool({
   description: `<description>. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.`,
-  args: z.object({
-    // Zod fields wrapped in z.object() — required for toJSONSchema conversion
-  }),
+  args: {
+    // Plain Zod fields (ZodRawShape) — OpenCode's fromPlugin wraps in z.object() internally
+  },
   async execute(args, _context) {
     // All env var access via getMaestroConfig() — never at module scope
     // Must return a JSON string (not an object)
@@ -26,11 +26,11 @@ export const maestro_<name> = tool({
 
 ## Required Fields
 
-| Field         | Type                               | Notes                                          |
-| ------------- | ---------------------------------- | ---------------------------------------------- |
-| `description` | `string`                           | Must include env var requirement note          |
-| `args`        | `z.ZodObject`                      | Zod fields wrapped in `z.object({})`           |
-| `execute`     | `async (args, _context) => string` | Must return `JSON.stringify(...)`              |
+| Field         | Type                               | Notes                                                      |
+| ------------- | ---------------------------------- | ---------------------------------------------------------- |
+| `description` | `string`                           | Must include env var requirement note                      |
+| `args`        | `ZodRawShape` (plain object)       | Plain Zod fields — `fromPlugin` wraps in `z.object()` internally |
+| `execute`     | `async (args, _context) => string` | Must return `JSON.stringify(...)`                          |
 
 ## Forbidden Patterns
 
@@ -47,7 +47,8 @@ These patterns **must never appear** in Maestro tool files:
 | `JsonSchemaProp`                           | JSON-schema conversion helper                                            |
 | `export default`                           | Must use named exports                                                   |
 | `process.env` outside `getMaestroConfig()` | Env access must be lazy                                                  |
-| `args: {` (without `z.object`)             | Args must be wrapped in `z.object()` for toJSONSchema compatibility      |
+| `args: z.object(` or `args: s.object(`     | `fromPlugin` wraps args — double-wrapping causes `schema._zod.def` error |
+| `import { z } from "zod"`                  | Use `const z = tool.schema` instead                                      |
 
 ## Environment Variable Model
 
