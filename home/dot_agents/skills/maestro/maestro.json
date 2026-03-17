@@ -49,10 +49,10 @@
         "properties": {
           "contract_version": { "type": "string" },
           "input": { "type": ["string", "array"] },
-          "model": { "type": "string" },
+          "model": { "type": "string", "nullable": true },
           "dry_run": { "type": "boolean", "nullable": true }
         },
-        "required": ["contract_version", "input", "model"]
+        "required": ["contract_version", "input"]
       }
     },
 
@@ -151,6 +151,58 @@
           "dry_run": { "type": "boolean", "nullable": true }
         },
         "required": ["contract_version", "steps"]
+      }
+    },
+
+    {
+      "name": "health",
+      "description": "Check Maestro service health and liveness.",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+
+    {
+      "name": "vector_collections_list",
+      "description": "List all vector collections.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "backend": { "type": "string", "nullable": true }
+        },
+        "required": []
+      }
+    },
+
+    {
+      "name": "vector_collections_create",
+      "description": "Create a vector collection.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "name": { "type": "string" },
+          "vector_size": { "type": "integer" },
+          "distance": { "type": "string", "nullable": true },
+          "if_not_exists": { "type": "boolean", "nullable": true },
+          "options": { "type": "object", "nullable": true },
+          "backend": { "type": "string", "nullable": true }
+        },
+        "required": ["contract_version", "name", "vector_size"]
+      }
+    },
+
+    {
+      "name": "vector_collections_delete",
+      "description": "Delete a vector collection.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }
+        },
+        "required": ["name"]
       }
     }
   ]

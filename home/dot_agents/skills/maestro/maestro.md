@@ -5,6 +5,11 @@ Agents must load maestro.json and must not ingest this file.
 
 Use this skill when delegating work to the local Maestro execution server.
 
+## Tool Registration Contract
+
+See [CONTRACT.md](CONTRACT.md) for the authoritative interface contract that all Maestro tools
+must follow. See [README.md](README.md) for architecture overview and migration rules.
+
 ## Base URL and Auth
 
 ```
