@@ -2,7 +2,7 @@ import { tool } from "@opencode-ai/plugin";
 import { z } from "zod";
 
 // Import canonical schemas
-import maestroSchemas from "../../.agents/skills/maestro/maestro.json";
+import maestroSchemas from "./_schemas/maestro.schema.json";
 
 const BASE_URL = "http://localhost:8100";
 const API_KEY = process.env.MAESTRO_API_KEY;
