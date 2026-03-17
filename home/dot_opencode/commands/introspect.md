@@ -10,10 +10,15 @@ Analyze current session to identify patterns, problems, and opportunities for im
 
 **First, read the introspection skill for methodology:**
 ```
-~/.claude/skills/introspection/SKILL.md
+~/.agents/skills/introspection/knowledge.md
 ```
 
 This skill contains the philosophy, pattern detection criteria, and severity classification used by this command.
+
+**For OpenCode-specific session access notes, see:**
+```
+~/.agents/adapters/opencode/skills/introspection/SKILL.md
+```
 
 ## Reference
 
@@ -22,7 +27,7 @@ This skill contains the philosophy, pattern detection criteria, and severity cla
 ~/.claude/commands/introspect.md
 ```
 
-Note: That command is designed for VS Code Copilot and references VS Code storage. This command adapts it for opencode's session model.
+Note: That command is designed for Claude Code and references Claude-specific storage. This command adapts it for opencode's session model.
 
 ## Opencode-Specific Process
 

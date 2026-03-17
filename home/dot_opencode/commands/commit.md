@@ -9,7 +9,12 @@ Create logical git commits with security scanning and optional push.
 
 ## Reference
 
-**For detailed process, see:**
+**For detailed git workflow knowledge, see:**
+```
+~/.agents/skills/git-workflow/knowledge.md
+```
+
+**For the Claude commit command process (reference implementation), see:**
 ```
 ~/.claude/commands/commit.md
 ```
