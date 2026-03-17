@@ -49,6 +49,7 @@ These patterns **must never appear** in Maestro tool files:
 | `process.env` outside `getMaestroConfig()` | Env access must be lazy                                                  |
 | `args: z.object(` or `args: s.object(`     | `fromPlugin` wraps args — double-wrapping causes `schema._zod.def` error |
 | `import { z } from "zod"`                  | Use `const z = tool.schema` instead                                      |
+| `z.record(z.unknown())` (single-arg form)  | Zod v4 sets arg as `keyType`, leaving `valueType` undefined — use `z.record(z.string(), z.unknown())` |
 
 ## Environment Variable Model
 

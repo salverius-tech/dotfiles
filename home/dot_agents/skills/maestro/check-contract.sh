@@ -68,6 +68,10 @@ check_forbidden 'args:\s*[sz]\.object\(' "Double-wrapped args (use plain shape, 
 # Direct zod import (must use tool.schema to get the same Zod instance)
 check_forbidden 'import\s*\{[^}]*\bz\b[^}]*\}\s*from\s*"zod"' "Direct zod import (use const z = tool.schema instead)"
 
+# Single-arg z.record() — Zod v4 misassigns the arg to keyType, leaving valueType undefined
+# which crashes toJSONSchema. Must use two-arg form: z.record(z.string(), z.unknown())
+check_forbidden 'z\.record\(\s*z\.\w+\(\)\s*\)' "Single-arg z.record() (use z.record(z.string(), z.unknown()) instead)"
+
 # Env var access outside getMaestroConfig
 # Match process.env that is NOT inside the getMaestroConfig function
 # Strategy: find all process.env lines, then exclude those within getMaestroConfig

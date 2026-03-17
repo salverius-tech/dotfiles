@@ -162,7 +162,7 @@ export const maestro_vector_search = tool({
     collection: z.string(),
     vector: z.array(z.number()),
     limit: z.number().int(),
-    filter: z.record(z.unknown()).nullable().optional(),
+    filter: z.record(z.string(), z.unknown()).nullable().optional(),
     with_payload: z.boolean().nullable().optional(),
     with_vectors: z.boolean().nullable().optional(),
     backend: z.string().nullable().optional(),
@@ -240,7 +240,7 @@ export const maestro_vector_collections_create = tool({
     vector_size: z.number().int(),
     distance: z.string().nullable().optional(),
     if_not_exists: z.boolean().nullable().optional(),
-    options: z.record(z.unknown()).nullable().optional(),
+    options: z.record(z.string(), z.unknown()).nullable().optional(),
     backend: z.string().nullable().optional(),
   },
   async execute(args, _context) {
