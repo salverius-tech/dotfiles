@@ -1,8 +1,3 @@
----
-name: session-context-management
-description: Maintain "just enough" context across work sessions using CURRENT.md, STATUS.md, and LESSONS.md files. Activate when tasks take >15 minutes, touch 3+ files, interruptions likely, or scope uncertain. Includes /snapshot and /pickup commands for saving and resuming work. ADHD-friendly, token-efficient approach.
----
-
 # Session Context Management
 
 **Auto-activate when:** Working with `CURRENT.md`, `STATUS.md`, `LESSONS.md`, `.session/` directory, or when user mentions /snapshot, /pickup, resume, session, or context management.
@@ -31,7 +26,7 @@ description: Maintain "just enough" context across work sessions using CURRENT.m
 
 ## Core Principles & Anti-Patterns
 
-**✅ Do:**
+**Do:**
 - "Just Enough" > Complete - Document to resume, not archive
 - Tokens Aren't Free - Every line costs tokens
 - User Can Fill Gaps - They remember context better than docs
@@ -39,7 +34,7 @@ description: Maintain "just enough" context across work sessions using CURRENT.m
 - ADHD-Friendly - Interruptions and rabbit holes are normal
 - Walk Away Anytime - Never lose context mid-work
 
-**❌ Don't:**
+**Don't:**
 - Complete audit trails - Not an archive
 - Explaining obvious things - User knows context
 - Upfront planning - Document as you go
@@ -82,14 +77,14 @@ Before writing to CURRENT.md, STATUS.md, or LESSONS.md, scan content for sensiti
 
 ## Low Context Warning Protocol
 
-**Automatic Monitoring**: Check token budget in `<system-reminder>` tags throughout conversation.
+**Automatic Monitoring**: Check token budget throughout conversation.
 
-**When < 10% Remaining (~<20k tokens):**
+**When < 10% Remaining:**
 1. Capture snapshot immediately using CURRENT.md format
-2. Alert user: "⚠️ Context usage at [X%] ([used]/[total] tokens). Recommend `/clear` soon to avoid interruption."
+2. Alert user about low context
 3. Provide resume prompt:
    ```
-   Copy this to resume after /clear:
+   Copy this to resume after clearing context:
 
    Resume [feature-name]: [Right Now from CURRENT.md]
    Last done: [Last item from Done list]
@@ -97,9 +92,9 @@ Before writing to CURRENT.md, STATUS.md, or LESSONS.md, scan content for sensiti
    [Blockers if any]
    ```
 
-**When < 5% Remaining (~<10k tokens):**
+**When < 5% Remaining:**
 1. Urgent snapshot capture
-2. Strong warning: "🚨 Context critical - [remaining] tokens left. `/clear` now recommended to avoid interruption."
+2. Strong warning about critical context levels
 3. Provide ready-to-use resume prompt
 
 **Why this approach**: No waiting for context compaction, seamless continuation, user control, preserves work.
@@ -111,9 +106,9 @@ Before writing to CURRENT.md, STATUS.md, or LESSONS.md, scan content for sensiti
 ```
 project-root/
 └── .session/feature/[feature-name]/
-    ├── CURRENT.md    # 🚀 READ FIRST - Quick resume (~150 lines max, includes Feature Overview)
-    ├── STATUS.md     # 📋 Terse log - Chronological entries with discussion capture
-    └── LESSONS.md    # 💡 Bullet points - What worked/didn't
+    ├── CURRENT.md    # READ FIRST - Quick resume (~150 lines max, includes Feature Overview)
+    ├── STATUS.md     # Terse log - Chronological entries with discussion capture
+    └── LESSONS.md    # Bullet points - What worked/didn't
 ```
 
 **Why `.session/`**: Usually gitignored (working memory, not documentation), UNLESS project has `enable-session-commits: true`
@@ -126,23 +121,13 @@ project-root/
 
 ## Multi-Instance Support
 
-**Scenario**: Multiple Claude instances working on same feature simultaneously
+**Scenario**: Multiple agent instances working on same feature simultaneously
 
 **Solution**: Tagged sections in single files using `[instance-id:session-id]` format
 
 ### Instance/Session ID Detection
 
-**Instance ID** (which IDE window):
-```bash
-INSTANCE_ID=$(cat ~/.claude/ide/$CLAUDE_CODE_SSE_PORT.lock 2>/dev/null | python -c "import json, sys; print(json.load(sys.stdin)['authToken'][:8])" 2>/dev/null || echo "unknown")
-```
-
-**Session ID** (which conversation):
-```bash
-SESSION_ID=$(ls -lt ~/.claude/debug/*.txt 2>/dev/null | head -1 | awk '{print $9}' | xargs basename 2>/dev/null | cut -d. -f1 | cut -c1-8 || echo "unknown")
-```
-
-**Combined Tag**: `[$INSTANCE_ID:$SESSION_ID]` (e.g., `[5d72a497:888cf413]`)
+Instance and session ID detection is runtime-specific. Each runtime adapter provides the appropriate commands for detecting instance and session identifiers. The combined tag format is `[$INSTANCE_ID:$SESSION_ID]` (e.g., `[5d72a497:888cf413]`).
 
 ### File Format with Multiple Instances
 
@@ -171,7 +156,7 @@ Last: 2025-11-13 23:30
 Working on queueing multiple questions without waiting
 
 ### Last 5 Done
-1. ✅ Implemented queue system
+1. Implemented queue system
 ...
 
 ---
@@ -183,7 +168,7 @@ Last: 2025-11-13 23:28
 Adding timestamp support to archive format
 
 ### Last 5 Done
-1. ✅ Fixed quotes escaping
+1. Fixed quotes escaping
 ...
 ```
 
@@ -197,8 +182,8 @@ Adding timestamp support to archive format
 **User Request**: Enable submitting multiple questions without blocking
 **Discussion**: Chose client-side queue over server queue for simpler implementation
 **Outcomes**:
-✅ Frontend can queue multiple questions
-❌ No concurrent request handling yet
+Done: Frontend can queue multiple questions
+Incomplete: No concurrent request handling yet
 **Next**: Test concurrent requests
 
 ---
@@ -207,7 +192,7 @@ Adding timestamp support to archive format
 **User Request**: Add timing information to transcripts
 **Discussion**: Archive format needs extension for metadata
 **Outcomes**:
-❌ Timestamps not in archive format
+Incomplete: Timestamps not in archive format
 **Next**: Add timing metadata
 ```
 
@@ -228,9 +213,9 @@ Adding timestamp support to archive format
 **CRITICAL: Use Relative Paths Only**
 
 When writing file paths in session files, ALWAYS use relative paths from the feature's working directory:
-- ✅ GOOD: `frontend/src/routes/+page.svelte`, `api/main.py`, `docker-compose.yml`
-- ❌ BAD: `C:\Projects\agent-spike\projects\mentat\api\main.py`, `projects/mentat/frontend/src/...`
-- ❌ BAD: `/home/user/code/app/main.py`
+- GOOD: `frontend/src/routes/+page.svelte`, `api/main.py`, `docker-compose.yml`
+- BAD: `C:\Projects\agent-spike\projects\mentat\api\main.py`, `projects/mentat/frontend/src/...`
+- BAD: `/home/user/code/app/main.py`
 
 **Rationale**:
 - Session files may be shared or moved
@@ -271,15 +256,14 @@ Last: YYYY-MM-DD HH:MM
 [One sentence describing what you're doing RIGHT NOW]
 
 ### Last 5 Done
-1. ✅ [Most recent completed task]
-2. ✅ [Previous completed task]
-3. ✅ [Earlier completed task]
-4. ✅ [Earlier completed task]
-5. ✅ [Earliest completed task]
+1. [Most recent completed task]
+2. [Previous completed task]
+3. [Earlier completed task]
+4. [Earlier completed task]
+5. [Earliest completed task]
 
 ### In Progress
-[If TodoWrite active: Copy active todos here]
-[If no TodoWrite: List what's being worked on from context]
+[List what's being worked on from context]
 - [Active item 1]
 - [Active item 2]
 
@@ -290,7 +274,7 @@ Last: YYYY-MM-DD HH:MM
 ### Tests
 [If tests were run, show results. If not run yet, write "Not run yet"]
 **[Framework name]**: X pass / Y fail
-- ❌ [failing-test-name] - [why it's failing]
+- [failing-test-name] - [why it's failing]
 
 ### Blockers
 [List specific blockers OR write "None"]
@@ -326,7 +310,7 @@ Details → STATUS.md
 **User Request**: [Summarized intent of user's request]
 **Discussion**: [Key decisions, alternatives considered, trade-offs - omit if obvious]
 **Outcomes**:
-✅/❌ [Outcome]
+Done/Incomplete: [Outcome]
 **Next**: [Action]
 
 ---
@@ -341,8 +325,8 @@ Details → STATUS.md
 **User Request**: Add certificate and credential authentication
 **Discussion**: Chose dual auth over single method for flexibility
 **Outcomes**:
-✅ Cert & cred auth working
-❌ Cookies broken in tests
+Done: Cert & cred auth working
+Incomplete: Cookies broken in tests
 **Next**: Fix playwright config
 ```
 
@@ -351,8 +335,8 @@ Details → STATUS.md
 ## [5d72:888c] 2025-01-12 15:10 - Fix tests
 **User Request**: Fix broken cookie tests
 **Outcomes**:
-✅ Playwright config updated
-✅ All tests passing
+Done: Playwright config updated
+Done: All tests passing
 **Next**: Deploy to staging
 ```
 
@@ -385,13 +369,13 @@ Details → STATUS.md
 
 ## Workflow
 
-### Session Start (Claude):
+### Session Start:
 1. Read CURRENT.md (< 1 min)
 2. Say: "Resuming: [Right Now]. Next: [Next 3 #1]"
 3. Mention blockers if any
 4. Start work
 
-### During Work (Claude):
+### During Work:
 1. Work on task
 2. Update CURRENT.md after milestones
 3. Append to STATUS.md (terse!)
@@ -434,8 +418,8 @@ Details → STATUS.md
 **Fill CURRENT.md with:**
 - Timestamp (YYYY-MM-DD HH:MM)
 - Right Now: One sentence what you're doing
-- Last 5 Done: From conversation/TodoWrite
-- In Progress: Copy active todos or current work items
+- Last 5 Done: From conversation/task list
+- In Progress: Copy active work items
 - Paused: Only if context-switched
 - Tests: Results if run, else "Not run yet"
 - Blockers: Specific blockers or "None"
@@ -443,8 +427,8 @@ Details → STATUS.md
 
 **Append to STATUS.md:**
 - Timestamp + brief description
-- ✅ What succeeded
-- ❌ What failed/incomplete
+- Done: What succeeded
+- Incomplete: What failed/incomplete
 - Next: What should happen next
 
 ### Error Handling:
@@ -467,7 +451,7 @@ Details → STATUS.md
    - If missing: List available sessions, ask which to resume, STOP
 3. **Read STATUS.md** - Show last 2-3 entries (timestamp + outcome)
    - If missing: Skip (no error)
-4. **Check LESSONS.md** - If STATUS entries ≥5 and LESSONS empty/missing, remind user to document patterns
+4. **Check LESSONS.md** - If STATUS entries >= 5 and LESSONS empty/missing, remind user to document patterns
 5. **Display resume format:**
    ```
    Resuming [feature-name]: [Right Now]
@@ -482,10 +466,10 @@ Details → STATUS.md
    Next: [Item #1 from Next 3]
 
    [If blockers:]
-   ⚠️ Blockers: [Blockers]
+   Blockers: [Blockers]
 
    [If LESSONS reminder needed:]
-   💡 Consider documenting patterns in LESSONS.md
+   Consider documenting patterns in LESSONS.md
    ```
 6. **Begin work immediately** - Execute "Next 3 #1" action, don't ask what to do
 
@@ -502,12 +486,10 @@ When task meets criteria OR `/snapshot`/`/pickup` invoked:
 
 1. **Check git tracking policy** (MUST do FIRST before creating session files):
 
-   **Step 1a**: Check if `.claude/CLAUDE.md` exists in project root
-   - Run: `test -f .claude/CLAUDE.md`
+   **Step 1a**: Check if a project configuration file exists in the project root
 
-   **Step 1b**: If `.claude/CLAUDE.md` exists, search for session commit setting
-   - Use Grep tool: Search for pattern `enable-session-commits:\s*true` in `.claude/CLAUDE.md`
-   - This is a SIMPLE grep search - just look for the exact line
+   **Step 1b**: If found, search for session commit setting
+   - Search for pattern `enable-session-commits: true`
 
    **Step 1c**: Apply policy based on search result
    - **IF "enable-session-commits: true" FOUND**:
@@ -517,7 +499,7 @@ When task meets criteria OR `/snapshot`/`/pickup` invoked:
      * DO NOT add `.session/` to gitignore
      * Session files are TRACKED
 
-   - **IF "enable-session-commits: true" NOT FOUND** (or `.claude/CLAUDE.md` doesn't exist):
+   - **IF "enable-session-commits: true" NOT FOUND** (or config doesn't exist):
      * Session files should NOT be committed
      * Check if `.gitignore` exists: `test -f .gitignore`
      * If `.gitignore` exists: Read and check for `.session/` line. Add if missing under "Session-specific directories" section.
@@ -553,13 +535,13 @@ When task meets criteria OR `/snapshot`/`/pickup` invoked:
 
 ## Success Criteria
 
-✅ Resume work in < 2 minutes from cold start
-✅ CURRENT.md stays under ~100 lines
-✅ STATUS.md entries are terse (< 50 words)
-✅ Can walk away anytime without loss
-✅ Find "why" in < 3 minutes when needed
-✅ Token usage is efficient
-✅ Self-evaluation shows we err on "less"
+- Resume work in < 2 minutes from cold start
+- CURRENT.md stays under ~100 lines
+- STATUS.md entries are terse (< 50 words)
+- Can walk away anytime without loss
+- Find "why" in < 3 minutes when needed
+- Token usage is efficient
+- Self-evaluation shows we err on "less"
 
 ---
 
@@ -568,6 +550,6 @@ When task meets criteria OR `/snapshot`/`/pickup` invoked:
 Works alongside:
 - `testing-workflow` - Test results in CURRENT.md
 - `git-workflow` - Commit SHAs in STATUS.md if relevant
-- `python-workflow` / `web-projects` - Same context system
+- Language/framework workflows - Same context system
 
 This skill provides working memory. Other skills provide domain knowledge.
