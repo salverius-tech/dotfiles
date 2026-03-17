@@ -8,9 +8,26 @@ import maestroSchemas from "./_schemas/maestro.schema.json";
 // like allow_shell: false as advisory metadata for agent planners. This client
 // does NOT enforce those constraints — enforcement is server-side via feature
 // flags (MAESTRO_ALLOW_SHELL, MAESTRO_ALLOW_DOCKER, etc.).
+//
+// Configuration model:
+// MAESTRO_BASE_URL and MAESTRO_API_KEY are resolved lazily inside each handler
+// call via getMaestroConfig(). This avoids module-load failures that would break
+// tool registration and ensures env changes are picked up at invocation time.
 
-const BASE_URL = process.env.MAESTRO_BASE_URL ?? "http://localhost:8100";
-const CLIENT_TIMEOUT_MS = Number(process.env.MAESTRO_CLIENT_TIMEOUT_MS) || 310_000;
+function getMaestroConfig() {
+  const baseUrl = process.env.MAESTRO_BASE_URL;
+  const apiKey = process.env.MAESTRO_API_KEY;
+  const timeoutMs =
+    Number(process.env.MAESTRO_CLIENT_TIMEOUT_MS) || 310_000;
+
+  if (!baseUrl || !apiKey) {
+    throw new Error(
+      "Maestro configuration missing. Set MAESTRO_BASE_URL and MAESTRO_API_KEY.",
+    );
+  }
+
+  return { baseUrl, apiKey, timeoutMs };
+}
 
 interface JsonSchemaProp {
   type: string | string[];
@@ -85,21 +102,24 @@ function jsonSchemaToZod(def: ToolSchema): ReturnType<typeof z.object> {
 }
 
 // Shared HTTP executor
-async function callMaestro(path: string, body?: Record<string, unknown>) {
-  const apiKey = process.env.MAESTRO_API_KEY;
+async function callMaestro(
+  path: string,
+  options?: {
+    body?: Record<string, unknown>;
+    method?: "GET" | "POST" | "DELETE";
+  },
+) {
+  const { baseUrl, apiKey, timeoutMs } = getMaestroConfig();
+  const body = options?.body;
+  const method = options?.method ?? (body ? "POST" : "GET");
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "X-API-Key": apiKey,
   };
 
-  if (apiKey) {
-    headers["X-API-Key"] = apiKey;
-  } else if (body) {
-    throw new Error("MAESTRO_API_KEY is required for non-GET requests");
-  }
-
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: body ? "POST" : "GET",
+  const res = await fetch(`${baseUrl}${path}`, {
+    method,
     headers,
     body: body
       ? JSON.stringify({
@@ -107,7 +127,7 @@ async function callMaestro(path: string, body?: Record<string, unknown>) {
           contract_version: "1.0",
         })
       : undefined,
-    signal: AbortSignal.timeout(CLIENT_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   });
 
   if (!res.ok) {
@@ -128,6 +148,13 @@ async function callMaestro(path: string, body?: Record<string, unknown>) {
     );
   }
 
+  // Server-side failure: HTTP 200 does not guarantee success
+  if (data?.status === "failed") {
+    throw new Error(
+      `Maestro ${path} returned status "failed": ${data.error ?? JSON.stringify(data)}`,
+    );
+  }
+
   // Normalize return value for OpenCode
   if (data === undefined || data === null) {
     return {};
@@ -145,79 +172,98 @@ async function callMaestro(path: string, body?: Record<string, unknown>) {
  * ------------------------- */
 
 export const run = tool({
-  description: "Execute a Maestro run",
+  description:
+    "Execute a Maestro run. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
   schema: jsonSchemaToZod(maestroSchemas.run as ToolSchema),
   async execute(args: Record<string, unknown>) {
-    return callMaestro("/run", args);
+    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+    return callMaestro("/run", { body: args });
   },
 });
 
 export const pipeline = tool({
-  description: "Execute a Maestro pipeline",
+  description:
+    "Execute a Maestro pipeline. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
   schema: jsonSchemaToZod(maestroSchemas.pipeline as ToolSchema),
   async execute(args: Record<string, unknown>) {
-    return callMaestro("/pipeline", args);
+    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+    return callMaestro("/pipeline", { body: args });
   },
 });
 
 export const llm = tool({
-  description: "Invoke an LLM via Maestro",
+  description:
+    "Invoke an LLM via Maestro. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
   schema: jsonSchemaToZod(maestroSchemas.llm as ToolSchema),
   async execute(args: Record<string, unknown>) {
-    return callMaestro("/llm", args);
+    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+    return callMaestro("/llm", { body: args });
   },
 });
 
 export const embed = tool({
-  description: "Generate embeddings via Maestro",
+  description:
+    "Generate embeddings via Maestro. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
   schema: jsonSchemaToZod(maestroSchemas.embed as ToolSchema),
   async execute(args: Record<string, unknown>) {
-    return callMaestro("/embed", args);
+    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+    return callMaestro("/embed", { body: args });
   },
 });
 
 export const vector_upsert = tool({
-  description: "Upsert vectors into Maestro storage",
+  description:
+    "Upsert vectors into Maestro storage. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
   schema: jsonSchemaToZod(maestroSchemas["vector.upsert"] as ToolSchema),
   async execute(args: Record<string, unknown>) {
-    return callMaestro("/vector/upsert", args);
+    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+    return callMaestro("/vector/upsert", { body: args });
   },
 });
 
 export const vector_search = tool({
-  description: "Search vectors via Maestro",
+  description:
+    "Search vectors via Maestro. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
   schema: jsonSchemaToZod(maestroSchemas["vector.search"] as ToolSchema),
   async execute(args: Record<string, unknown>) {
-    return callMaestro("/vector/search", args);
+    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+    return callMaestro("/vector/search", { body: args });
   },
 });
 
 export const vector_delete = tool({
-  description: "Delete vectors via Maestro",
+  description:
+    "Delete vectors via Maestro. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
   schema: jsonSchemaToZod(maestroSchemas["vector.delete"] as ToolSchema),
   async execute(args: Record<string, unknown>) {
-    return callMaestro("/vector/delete", args);
+    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+    return callMaestro("/vector/delete", { body: args });
   },
 });
 
 export const file_read = tool({
-  description: "Read a file via Maestro",
+  description:
+    "Read a file via Maestro. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
   schema: jsonSchemaToZod(maestroSchemas.file_read as ToolSchema),
   async execute(args: Record<string, unknown>) {
-    return callMaestro("/file/read", args);
+    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+    return callMaestro("/file/read", { body: args });
   },
 });
 
 export const file_write = tool({
-  description: "Write a file via Maestro",
+  description:
+    "Write a file via Maestro. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
   schema: jsonSchemaToZod(maestroSchemas.file_write as ToolSchema),
   async execute(args: Record<string, unknown>) {
-    return callMaestro("/file/write", args);
+    if (args.dry_run) return { ok: true, dry_run: true, ...args };
+    return callMaestro("/file/write", { body: args });
   },
 });
 
 export const health = tool({
-  description: "Check Maestro health",
+  description:
+    "Check Maestro health. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
   schema: z.object({}),
   async execute() {
     return callMaestro("/health");
@@ -225,7 +271,8 @@ export const health = tool({
 });
 
 export const vector_collections_list = tool({
-  description: "List all vector collections",
+  description:
+    "List all vector collections. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
   schema: jsonSchemaToZod(
     maestroSchemas["vector.collections.list"] as ToolSchema,
   ),
@@ -236,47 +283,27 @@ export const vector_collections_list = tool({
 });
 
 export const vector_collections_create = tool({
-  description: "Create a vector collection",
+  description:
+    "Create a vector collection. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
   schema: jsonSchemaToZod(
     maestroSchemas["vector.collections.create"] as ToolSchema,
   ),
   async execute(args: Record<string, unknown>) {
-    return callMaestro("/vector/collections", args);
+    return callMaestro("/vector/collections", { body: args });
   },
 });
 
 export const vector_collections_delete = tool({
-  description: "Delete a vector collection",
+  description:
+    "Delete a vector collection. Requires MAESTRO_BASE_URL and MAESTRO_API_KEY to be set in the environment.",
   schema: jsonSchemaToZod(
     maestroSchemas["vector.collections.delete"] as ToolSchema,
   ),
   async execute(args: Record<string, unknown>) {
     const { name } = args as { name: string };
-    const apiKey = process.env.MAESTRO_API_KEY;
-    if (!apiKey) {
-      throw new Error("MAESTRO_API_KEY is required for DELETE requests");
-    }
-    const res = await fetch(
-      `${BASE_URL}/vector/collections/${encodeURIComponent(name)}`,
-      {
-        method: "DELETE",
-        headers: { "X-API-Key": apiKey },
-        signal: AbortSignal.timeout(CLIENT_TIMEOUT_MS),
-      },
+    return callMaestro(
+      `/vector/collections/${encodeURIComponent(name)}`,
+      { method: "DELETE" },
     );
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(
-        `Maestro /vector/collections/${name} returned HTTP ${res.status}: ${text}`,
-      );
-    }
-    const text = await res.text();
-    try {
-      return JSON.parse(text);
-    } catch (err) {
-      throw new Error(
-        `Maestro /vector/collections/${name} returned non-JSON response (${res.status}): ${(err as Error).message}\n${text}`,
-      );
-    }
   },
 });
