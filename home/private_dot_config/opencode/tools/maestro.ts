@@ -36,12 +36,16 @@ async function callMaestro(path: string, body?: Record<string, unknown>) {
     throw new Error(`Maestro returned non-JSON response (${res.status}):\n${text}`);
   }
 
-  if (data.status && data.status !== "completed") {
-    throw new Error(`Maestro error (${data.status}): ${data.error ?? "unknown error"}`);
+  // Normalize return value for OpenCode
+  if (data === undefined || data === null) {
+    return {};
   }
 
-  // IMPORTANT: return only JSON-safe payload
-  return data.result ?? data;
+  if (typeof data !== "object") {
+    return { value: data };
+  }
+
+  return data;
 }
 
 /* -------------------------
