@@ -27,7 +27,14 @@ async function callMaestro(path: string, body?: Record<string, unknown>) {
       : undefined,
   });
 
-  const data = await res.json();
+  const text = await res.text();
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    throw new Error(`Maestro returned non-JSON response (${res.status}):\n${text}`);
+  }
 
   if (data.status && data.status !== "completed") {
     throw new Error(`Maestro error (${data.status}): ${data.error ?? "unknown error"}`);
