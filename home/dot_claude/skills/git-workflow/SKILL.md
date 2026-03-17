@@ -5,7 +5,11 @@ description: Git workflow and commit guidelines. Trigger keywords: git, commit, 
 
 **Auto-activate when:** Working with `.gitignore`, `.gitattributes`, `.git/`, or when user mentions commit, push, git, version control, pull request, branch, merge, staging changes, filter-branch, rebase, reset, or history rewrite. Should also activate when bash commands contain `git` (requires conversation parsing).
 
-Read `~/.agents/skills/git-workflow/knowledge.md` for the full guidelines.
+This is a thin loader. The full skill content lives in a separate directory.
+
+Use the Read tool to load the file at this exact path: ~/.agents/skills/git-workflow/knowledge.md
+
+This file is in the .agents directory (NOT .claude). The path is: ~/.agents/skills/git-workflow/knowledge.md
 
 ## Philosophy
 
