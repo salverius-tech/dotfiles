@@ -192,6 +192,9 @@ output format or persona — e.g. `"You are a concise assistant. Respond in one 
 
 Available models (local defaults): `maestro-assistant:latest`, `llama3.1:8b`
 
+> **Backend note:** Only Ollama-hosted models are currently available. OpenAI/Anthropic models
+> (e.g. `gpt-4o-mini`) are not supported — use Ollama model names only.
+
 To target a specific backend, set `backend` to the backend ID (e.g. `"ollama-llm"`, `"openrouter"`).
 When omitted, Maestro selects the best available LLM backend automatically.
 
@@ -208,6 +211,10 @@ When omitted, Maestro selects the best available LLM backend automatically.
 ```
 
 `input` can be a string or a list of strings.
+
+> **Known limitation:** Batch input (array of strings) is currently treated as a single
+> concatenated string — each item returns duplicated embeddings rather than independent
+> vectors. For reliable results, embed one string at a time.
 
 Result: `{ "embeddings": [[...]], "model": "nomic-embed-text", "backend": "ollama-embed" }`
 
@@ -228,6 +235,14 @@ available embed backend. There is no `backend` field on embed requests.
   "backend": null
 }
 ```
+
+> **Point IDs must be integers.** Qdrant uses integer point IDs by default — string IDs
+> return HTTP 400. Use sequential integers (1, 2, 3...) for point IDs.
+>
+> **Payload size:** Large vectors (e.g. 768-dim floats) in a single upsert call may exceed
+> OpenCode's tool call payload limit, causing the call to abort. For high-dimensional vectors,
+> use a **pipeline** to embed + upsert server-side (see embed→upsert example in the Pipeline
+> section). This avoids the LLM having to generate hundreds of float values in tool call args.
 
 Result: `{ "operation": "upsert", "collection": "my_collection", "backend": "qdrant" }`
 
@@ -264,6 +279,9 @@ Also accessible via `/vector/query` (hidden alias for `/vector/search`).
   "backend": null
 }
 ```
+
+> **IDs must be integers** (matching the upsert format). String IDs return HTTP 400.
+> Deleting non-existent IDs is a no-op (succeeds silently).
 
 Result: `{ "operation": "delete", "collection": "my_collection", "backend": "qdrant" }`
 
@@ -461,7 +479,13 @@ Run multiple actions in sequence with optional output chaining between steps.
 
 **Available actions:** `run`, `llm`, `embed`, `vector.upsert`, `vector.search`, `vector.delete`, `file_read`, `file_write`
 
-Each action accepts the same params as its standalone endpoint.
+Each step's `params` object accepts the same fields as its standalone endpoint, **including
+`contract_version: "1.0"`** which is required in each step's params (not just the top-level body).
+
+**Step format:**
+```json
+{ "action": "run", "params": { "contract_version": "1.0", "command": "echo hello" } }
+```
 
 **Pipeline response:**
 
@@ -555,6 +579,41 @@ Reference a prior step's result inside any param value:
         "contract_version": "1.0",
         "model": "llama3.1:8b",
         "prompt": "Summarise this report:\n\n{{steps[0].result.stdout}}"
+      }
+    }
+  ]
+}
+```
+
+**Example — embed text → upsert vector (recommended for high-dim vectors):**
+
+This pattern avoids the LLM having to generate 768+ float values in tool call args,
+which can exceed token limits and cause the call to abort. Instead, the embedding is
+generated server-side and chained directly into the upsert.
+
+```json
+{
+  "contract_version": "1.0",
+  "steps": [
+    {
+      "action": "embed",
+      "params": {
+        "contract_version": "1.0",
+        "input": "Text to embed and store"
+      }
+    },
+    {
+      "action": "vector.upsert",
+      "params": {
+        "contract_version": "1.0",
+        "collection": "my_collection",
+        "points": [
+          {
+            "id": 1,
+            "vector": "{{steps[0].result.embeddings.0}}",
+            "payload": { "text": "Text to embed and store" }
+          }
+        ]
       }
     }
   ]
