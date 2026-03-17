@@ -24,7 +24,7 @@
   },
   "embed": {
     "properties": {
-      "input": { "type": "string" },
+      "input": { "type": ["string", "array"], "items": { "type": "string" }, "description": "Text to embed. A single string or an array of strings." },
       "model": { "type": "string" },
       "dry_run": { "type": "boolean", "nullable": true }
     },
@@ -85,5 +85,28 @@
       "dry_run": { "type": "boolean", "nullable": true }
     },
     "required": ["steps"]
+  },
+  "vector.collections.list": {
+    "properties": {
+      "backend": { "type": "string", "nullable": true, "description": "Target a specific vector backend." }
+    },
+    "required": []
+  },
+  "vector.collections.create": {
+    "properties": {
+      "name": { "type": "string", "description": "Collection name." },
+      "vector_size": { "type": "integer", "description": "Dimensionality of vectors (e.g. 768)." },
+      "distance": { "type": "string", "nullable": true, "description": "Distance metric: cosine, euclid, dot, manhattan." },
+      "if_not_exists": { "type": "boolean", "nullable": true, "description": "If true, do not error when collection already exists." },
+      "options": { "type": "object", "nullable": true },
+      "backend": { "type": "string", "nullable": true }
+    },
+    "required": ["name", "vector_size"]
+  },
+  "vector.collections.delete": {
+    "properties": {
+      "name": { "type": "string", "description": "Name of the collection to delete." }
+    },
+    "required": ["name"]
   }
 }
