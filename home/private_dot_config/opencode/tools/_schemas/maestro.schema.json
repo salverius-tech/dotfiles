@@ -1,1 +1,89 @@
-{}
+{
+  "run": {
+    "properties": {
+      "command": { "type": "string" },
+      "timeout": { "type": "integer", "nullable": true },
+      "workdir": { "type": "string", "nullable": true },
+      "callback_url": { "type": "string", "nullable": true },
+      "dry_run": { "type": "boolean", "nullable": true }
+    },
+    "required": ["command"]
+  },
+  "llm": {
+    "properties": {
+      "model": { "type": "string" },
+      "prompt": { "type": "string" },
+      "system": { "type": "string", "nullable": true },
+      "temperature": { "type": "number", "nullable": true },
+      "max_tokens": { "type": "integer", "nullable": true },
+      "backend": { "type": "string", "nullable": true },
+      "quantization": { "type": "string", "nullable": true },
+      "dry_run": { "type": "boolean", "nullable": true }
+    },
+    "required": ["model", "prompt"]
+  },
+  "embed": {
+    "properties": {
+      "input": { "type": "string" },
+      "model": { "type": "string" },
+      "dry_run": { "type": "boolean", "nullable": true }
+    },
+    "required": ["input", "model"]
+  },
+  "vector.upsert": {
+    "properties": {
+      "collection": { "type": "string" },
+      "points": { "type": "array" },
+      "backend": { "type": "string", "nullable": true },
+      "dry_run": { "type": "boolean", "nullable": true }
+    },
+    "required": ["collection", "points"]
+  },
+  "vector.search": {
+    "properties": {
+      "collection": { "type": "string" },
+      "vector": { "type": "array" },
+      "limit": { "type": "integer" },
+      "filter": { "type": "object", "nullable": true },
+      "with_payload": { "type": "boolean", "nullable": true },
+      "with_vectors": { "type": "boolean", "nullable": true },
+      "backend": { "type": "string", "nullable": true },
+      "dry_run": { "type": "boolean", "nullable": true }
+    },
+    "required": ["collection", "vector", "limit"]
+  },
+  "vector.delete": {
+    "properties": {
+      "collection": { "type": "string" },
+      "ids": { "type": "array" },
+      "backend": { "type": "string", "nullable": true },
+      "dry_run": { "type": "boolean", "nullable": true }
+    },
+    "required": ["collection", "ids"]
+  },
+  "file_read": {
+    "properties": {
+      "path": { "type": "string" },
+      "dry_run": { "type": "boolean", "nullable": true }
+    },
+    "required": ["path"]
+  },
+  "file_write": {
+    "properties": {
+      "path": { "type": "string" },
+      "content": { "type": "string" },
+      "mode": { "type": "string", "nullable": true },
+      "dry_run": { "type": "boolean", "nullable": true }
+    },
+    "required": ["path", "content"]
+  },
+  "pipeline": {
+    "properties": {
+      "steps": { "type": "array" },
+      "stop_on_error": { "type": "boolean", "nullable": true },
+      "callback_url": { "type": "string", "nullable": true },
+      "dry_run": { "type": "boolean", "nullable": true }
+    },
+    "required": ["steps"]
+  }
+}
