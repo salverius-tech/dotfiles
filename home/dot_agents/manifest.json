@@ -1,4 +1,26 @@
 {
   "version": "1.0",
-  "global_rules": "./global/rules.md"
+  "schema_version": "1.0",
+
+  "global_rules": "./global/rules.md",
+
+  "directories": {
+    "skills": "./skills",
+    "roles": "./roles",
+    "intents": "./intents",
+    "adapters": "./adapters",
+    "runtime": "./runtime"
+  },
+
+  "loading": {
+    "skill_entry": "knowledge.md",
+    "role_entry": "role.md",
+    "intent_entry": "intent.json"
+  },
+
+  "adapters": {
+    "claude": "./adapters/claude",
+    "opencode": "./adapters/opencode",
+    "copilot": "./adapters/copilot"
+  }
 }
