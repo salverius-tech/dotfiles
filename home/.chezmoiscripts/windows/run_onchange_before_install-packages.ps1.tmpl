@@ -1,28 +1,31 @@
 # chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
 # Windows package installation script
 
-# Check for Administrator privileges
-if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
-    Write-Host "ERROR: This script requires Administrator privileges." -ForegroundColor Red
-    Write-Host "Please run PowerShell as Administrator and try again." -ForegroundColor Yellow
-    Write-Host "Right-click PowerShell → 'Run as administrator'" -ForegroundColor Cyan
-    exit 1
+# Check for Administrator privileges. Admin is preferred, but user-level setup can proceed without it.
+$IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')
+if (-not $IsAdmin) {
+    Write-Warning "Not running as Administrator. System-level changes may be skipped."
+    Write-Host "For full setup, right-click PowerShell → 'Run as administrator' and re-run chezmoi apply." -ForegroundColor Cyan
 }
 
 # Enable SSH Agent service (required for SSH keys)
-Write-Host "Configuring SSH Agent service..." -ForegroundColor Cyan
-$sshAgent = Get-Service -Name ssh-agent -ErrorAction SilentlyContinue
-if ($sshAgent) {
-    if ($sshAgent.StartType -eq 'Disabled') {
-        Set-Service -Name ssh-agent -StartupType Automatic
-        Write-Host "  Enabled ssh-agent (set to Automatic)" -ForegroundColor Green
-    }
-    if ($sshAgent.Status -ne 'Running') {
-        Start-Service -Name ssh-agent -ErrorAction SilentlyContinue
-        Write-Host "  Started ssh-agent service" -ForegroundColor Green
+if ($IsAdmin) {
+    Write-Host "Configuring SSH Agent service..." -ForegroundColor Cyan
+    $sshAgent = Get-Service -Name ssh-agent -ErrorAction SilentlyContinue
+    if ($sshAgent) {
+        if ($sshAgent.StartType -eq 'Disabled') {
+            Set-Service -Name ssh-agent -StartupType Automatic
+            Write-Host "  Enabled ssh-agent (set to Automatic)" -ForegroundColor Green
+        }
+        if ($sshAgent.Status -ne 'Running') {
+            Start-Service -Name ssh-agent -ErrorAction SilentlyContinue
+            Write-Host "  Started ssh-agent service" -ForegroundColor Green
+        }
+    } else {
+        Write-Warning "  ssh-agent service not found. Install OpenSSH Client via Windows Settings → Apps → Optional Features."
     }
 } else {
-    Write-Warning "  ssh-agent service not found. Install OpenSSH Client via Windows Settings → Apps → Optional Features."
+    Write-Warning "Skipping ssh-agent service configuration because this shell is not elevated."
 }
 
 Write-Host "Installing packages for Windows..." -ForegroundColor Cyan
@@ -36,6 +39,22 @@ if ($currentPolicy -eq 'Restricted' -or $currentPolicy -eq 'AllSigned') {
     Write-Host "  Set-ExecutionPolicy RemoteSigned -Scope LocalMachine" -ForegroundColor White
     Write-Host ""
     Write-Host "Continuing with package installation anyway..." -ForegroundColor Yellow
+}
+
+# Install Git for Windows (required by Pi for Git Bash on native Windows)
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing Git for Windows..." -ForegroundColor Yellow
+    winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements --silent
+} else {
+    Write-Host "Git already installed, skipping..." -ForegroundColor Green
+}
+
+# Install Node.js LTS (required for Pi)
+if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing Node.js LTS..." -ForegroundColor Yellow
+    winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements --silent
+} else {
+    Write-Host "Node.js/npm already installed, skipping..." -ForegroundColor Green
 }
 
 # Install Starship prompt
@@ -82,6 +101,25 @@ if (-not (Get-Command bun -ErrorAction SilentlyContinue)) {
     Write-Host "Bun already installed, skipping..." -ForegroundColor Green
 }
 
+# Install Pi using npm
+Write-Host "Checking for Pi coding agent installation..." -ForegroundColor Cyan
+if (Get-Command npm -ErrorAction SilentlyContinue) {
+    if (-not (Get-Command pi -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing Pi coding agent via npm..." -ForegroundColor Yellow
+        try {
+            npm install -g @earendil-works/pi-coding-agent
+            Write-Host "Pi installed successfully" -ForegroundColor Green
+            Write-Host "Run 'pi' to start the coding agent" -ForegroundColor Cyan
+        } catch {
+            Write-Warning "Failed to install Pi via npm: $_"
+        }
+    } else {
+        Write-Host "Pi already installed, skipping..." -ForegroundColor Green
+    }
+} else {
+    Write-Warning "npm not available, skipping Pi installation. Restart the shell after Node.js install and re-run chezmoi apply."
+}
+
 # Install opencode using Bun
 Write-Host "Checking for opencode installation..." -ForegroundColor Cyan
 if (Get-Command bun -ErrorAction SilentlyContinue) {
@@ -103,6 +141,9 @@ if (Get-Command bun -ErrorAction SilentlyContinue) {
 
 # Install recommended VS Code extensions
 Write-Host "Checking VS Code extensions..." -ForegroundColor Cyan
+if (-not (Get-Command code -ErrorAction SilentlyContinue)) {
+    Write-Warning "code command not available yet. Restart the shell after VS Code install and re-run chezmoi apply to install extensions."
+} else {
 $extensions = @(
     "usernamehw.errorlens",             # Inline error highlighting
     "christian-kohler.path-intellisense", # Autocomplete filenames
@@ -132,6 +173,7 @@ foreach ($ext in $extensions) {
     } catch {
         Write-Warning "Could not install extension $ext : $_"
     }
+}
 }
 
 Write-Host "Package installation complete!" -ForegroundColor Green

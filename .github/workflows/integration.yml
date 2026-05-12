@@ -82,6 +82,10 @@ jobs:
         with:
           script: |
             const webhookUrl = '${{ secrets.DISCORD_WEBHOOK }}';
+            if (!webhookUrl) {
+              core.info('DISCORD_WEBHOOK not set; skipping notification.');
+              return;
+            }
             const jobs = {
               container: '${{ needs.test-linux-container.result }}',
               windows: '${{ needs.test-windows.result }}'

@@ -58,8 +58,13 @@
         {
             "id": "Terminal.MoveFocusRight",
             "keys": "alt+right"
+        },
+        {
+            "command": "unbound",
+            "keys": "alt+enter"
         }
     ],
+    "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
     "newTabMenu": 
     [
         {
@@ -91,9 +96,28 @@
         "list": 
         [
             {
+                "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                "hidden": false,
+                "name": "PowerShell",
+                "source": "Windows.Terminal.PowershellCore"
+            },
+            {
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "hidden": false,
                 "name": "Windows PowerShell"
+            },
+            {
+                "guid": "{2c4de342-38b7-51cf-b940-2309a097f518}",
+                "hidden": false,
+                "name": "Ubuntu",
+                "source": "Windows.Terminal.Wsl"
+            },
+            {
+                "guid": "{00000000-0000-0000-ba54-000000000002}",
+                "hidden": false,
+                "name": "Git Bash",
+                "commandline": "%ProgramFiles%\\Git\\bin\\bash.exe -l -i",
+                "icon": "%ProgramFiles%\\Git\\mingw64\\share\\git\\git-for-windows.ico"
             }
         ]
     },

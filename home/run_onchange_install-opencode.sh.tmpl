@@ -4,11 +4,19 @@
 
 set -e
 
+# {{ $pm := "unknown" }}
+# {{ if hasKey . "package_manager" }}# {{ $pm = .package_manager }}# {{ end }}
+
 # {{ if ne .chezmoi.os "windows" }}
+if [ "${CI:-}" = "true" ]; then
+    echo "CI detected, skipping opencode installation..."
+    exit 0
+fi
+
 if ! command -v opencode &> /dev/null; then
     echo "Installing opencode..."
     
-    # {{ if eq .package_manager "brew" }}
+    # {{ if eq $pm "brew" }}
     # macOS with Homebrew - use the official tap
     if command -v brew &> /dev/null; then
         brew install anomalyco/tap/opencode

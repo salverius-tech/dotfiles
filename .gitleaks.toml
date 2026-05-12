@@ -1,0 +1,30 @@
+title = "dotfiles gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "dotfiles-ssh-private-key"
+description = "SSH private key material"
+regex = '''-----BEGIN (OPENSSH|RSA|DSA|EC|ECDSA) PRIVATE KEY-----'''
+tags = ["key", "ssh"]
+
+[[rules]]
+id = "dotfiles-env-assignment-secret"
+description = "Likely secret assigned in an env-style line"
+regex = '''(?i)(api[_-]?key|token|secret|password|passwd|credential)\s*=\s*['\"]?[A-Za-z0-9_./+=:-]{20,}'''
+tags = ["secret", "env"]
+
+[allowlist]
+description = "Allow documented placeholder variable names and package metadata"
+regexes = [
+  '''OPENROUTER_API_KEY''',
+  '''ANTHROPIC_API_KEY''',
+  '''GEMINI_API_KEY''',
+  '''CHEZMOI_GIT_EMAIL''',
+  '''CHEZMOI_GIT_NAME'''
+]
+paths = [
+  '''home/dot_pi/agent/models\.json\.tmpl''',
+  '''README\.md'''
+]

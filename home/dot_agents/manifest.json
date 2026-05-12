@@ -21,6 +21,7 @@
   "adapters": {
     "claude": "./adapters/claude",
     "opencode": "./adapters/opencode",
-    "copilot": "./adapters/copilot"
+    "copilot": "./adapters/copilot",
+    "pi": "./adapters/pi"
   }
 }

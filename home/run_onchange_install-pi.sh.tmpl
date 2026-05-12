@@ -1,0 +1,25 @@
+#!/bin/bash
+# chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
+# Installs Pi coding agent on Linux/macOS hosts.
+
+set -euo pipefail
+
+# {{ if ne .chezmoi.os "windows" }}
+if [ "${CI:-}" = "true" ]; then
+    echo "CI detected, skipping Pi installation..."
+    exit 0
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+    echo "npm is required to install Pi. Install Node.js/npm and re-run chezmoi apply."
+    exit 0
+fi
+
+if ! command -v pi >/dev/null 2>&1; then
+    echo "Installing Pi coding agent..."
+    mkdir -p "${HOME}/.local"
+    npm install -g --prefix "${HOME}/.local" @earendil-works/pi-coding-agent
+else
+    echo "Pi coding agent already installed, skipping..."
+fi
+# {{ end }}

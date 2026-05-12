@@ -1,6 +1,12 @@
 README.md
 LICENSE
 
+# Pi runtime/auth/package/session data must remain local
+dot_pi/agent/sessions/**
+dot_pi/agent/git/**
+dot_pi/agent/npm/**
+dot_pi/agent/auth*
+
 {{- if ne .chezmoi.os "linux" }}
 # dircolors is Linux-only (BSD ls on macOS doesn't use it)
 dot_dircolors
@@ -26,6 +32,10 @@ AppData/Roaming/Code/
 run_once_before_install-packages.sh
 run_once_install-starship.sh
 run_once_install-opencode.sh
+run_onchange_before_install-packages.sh
+run_onchange_install-starship.sh
+run_onchange_install-opencode.sh
+run_onchange_install-pi.sh
 # Safely ignore all shell scripts on Windows to prevent execution errors
 **/*.sh
 {{- end }}

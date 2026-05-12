@@ -44,7 +44,15 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply salverius-tech/dotfiles
 
 This sets git user to `salverius` with email `salverius@users.noreply.github.com`.
 
-### OpenCode Setup
+### AI Coding Tools Setup
+
+Pi and OpenCode are automatically installed during setup when their prerequisites are available.
+
+**Pi coding agent:**
+- Installed via `npm install -g @earendil-works/pi-coding-agent`
+- Global config managed at `~/.pi/agent/`
+- Uses Git Bash on native Windows (`C:\\Program Files\\Git\\bin\\bash.exe`)
+- Run `pi` to start, `pi -c` to continue, or `pi -r` to resume a prior session
 
 OpenCode is automatically installed during setup:
 
@@ -63,6 +71,7 @@ OpenCode is automatically installed during setup:
 - **Git configuration** - Aliases, auto-rebase, OS-specific credential helpers
 - **Global gitignore** - Common patterns (.DS_Store, node_modules/, etc.)
 - **PowerShell profile** - Windows-equivalent aliases and Starship
+- **Pi** - Extensible terminal coding agent with managed global settings, prompts, skills, and extensions
 - **OpenCode** - AI coding assistant for terminal-based development
 
 ### Packages Installed
@@ -72,18 +81,24 @@ OpenCode is automatically installed during setup:
 | Starship | Cross-shell prompt |
 | JetBrains Mono Nerd Font | Terminal font with icons |
 | fontconfig | Font management (Linux) |
+| Pi | Extensible terminal coding agent |
 | OpenCode | AI coding assistant |
+| Node.js/npm | JavaScript runtime and package manager (required for Pi) |
+| Git for Windows | Provides Git Bash for Pi on native Windows |
 | Bun | JavaScript runtime (Windows, required for OpenCode) |
 
 ## Windows Setup
 
 ### Windows Terminal
 Custom configuration with:
-- PowerShell as default profile with Starship prompt
+- PowerShell 7 as default profile with Starship prompt
+- Windows PowerShell fallback profile
+- Git Bash profile for Pi/native bash workflows
 - WSL profile (Ubuntu/Debian) for Linux workflows
 - Orange/Blue color scheme matching Starship theme
 - Acrylic background with 80% opacity
 - Custom key bindings (Ctrl+Shift+T for new tab, etc.)
+- Alt+Enter unbound so Pi can use it for follow-up messages
 
 ### VS Code Integration
 - Integrated terminal uses PowerShell with Starship
@@ -166,6 +181,19 @@ make all     # Run full test suite
 ```
 
 See [CLAUDE.md](CLAUDE.md) for detailed testing information.
+
+## Pi Coding Agent Configuration
+
+Managed Pi files are installed under `~/.pi/agent/`:
+
+- `AGENTS.md` - Global Pi instructions that bridge into `~/.agents`
+- `settings.json` - Model/thinking/skills/prompts/extensions settings
+- `models.json` - Local/proxy provider definitions without embedded secrets
+- `keybindings.json` - Cross-platform keybinding overrides
+- `prompts/` - Prompt templates such as `/commit`, `/pickup`, and `/snapshot`
+- `extensions/` - Safety and workflow extensions such as damage-control checks
+
+The unified agent system under `~/.agents/` includes a Pi adapter at `~/.agents/adapters/pi/`.
 
 ### CI/CD
 - **Validate**: Runs on every PR
