@@ -13,7 +13,7 @@ This repository manages shell configurations, development tools, and Claude Code
 ├── home/                          # Source directory (chezmoi root)
 │   ├── .chezmoi.toml.tmpl         # Template configuration with OS detection
 │   ├── .chezmoiignore             # Platform-specific ignore rules
-│   ├── run_once_*.sh.tmpl         # One-time setup scripts
+│   ├── run_onchange_*.sh.tmpl     # Idempotent setup scripts re-run after changes
 │   ├── .chezmoiscripts/           # Platform-specific scripts
 │   │   └── windows/
 │   ├── dot_*                      # Dotfiles (renamed from .prefix)
@@ -49,8 +49,8 @@ This repository manages shell configurations, development tools, and Claude Code
 ```
 
 **Installation Scripts:**
-- `run_once_before_*`: Run before file deployment (package installation)
-- `run_once_after_*`: Run after file deployment (configuration)
+- `run_onchange_before_*`: Run before file deployment and re-run when script content changes
+- `run_once_after_*`: Run once after file deployment for true one-time configuration
 - Scripts are idempotent - check for existing installations before proceeding
 
 ## Working with This Repository
@@ -69,8 +69,8 @@ This repository manages shell configurations, development tools, and Claude Code
 ### Adding Package Installations
 
 Edit the appropriate script based on OS:
-- Linux/macOS: `home/run_once_before_install-packages.sh.tmpl`
-- Windows: `home/.chezmoiscripts/windows/run_once_before_install-packages.ps1.tmpl`
+- Linux/macOS: `home/run_onchange_before_install-packages.sh.tmpl`
+- Windows: `home/.chezmoiscripts/windows/run_onchange_before_install-packages.ps1.tmpl`
 
 **Pattern:** Check if installed, then install:
 ```bash
@@ -97,7 +97,7 @@ chezmoi diff
 ```
 
 **Validation:**
-- Ensure scripts are executable: `chmod +x run_once_*.sh.tmpl`
+- Ensure scripts are executable: `chmod +x run_onchange_*.sh.tmpl`
 - Verify template syntax: `chezmoi execute-template < file.tmpl`
 - Test on all target platforms (CI recommended)
 
@@ -115,7 +115,7 @@ Dotfiles Repository
 ├── home/                          # chezmoi source directory
 │   ├── .chezmoi.toml.tmpl         # OS detection & data variables
 │   ├── .chezmoiignore             # Platform-specific exclusions
-│   ├── run_once_*.sh.tmpl         # One-time setup scripts
+│   ├── run_onchange_*.sh.tmpl     # Idempotent setup scripts re-run after changes
 │   ├── .chezmoiscripts/windows/   # Windows-specific scripts
 │   ├── dot_*                      # Regular dotfiles
 │   ├── private_dot_*              # Sensitive files (mode 600)
@@ -164,7 +164,7 @@ Edit `home/.chezmoi.toml.tmpl` to add new data variables or modify OS detection 
 
 ### Add new platform support
 1. Update package manager detection in `.chezmoi.toml.tmpl`
-2. Add package installation logic in `run_once_before_install-packages.sh.tmpl`
+2. Add package installation logic in `run_onchange_before_install-packages.sh.tmpl`
 3. Update `.chezmoiignore` for platform-specific exclusions
 
 ### Modify Claude Code behavior

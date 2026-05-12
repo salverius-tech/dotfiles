@@ -9,7 +9,7 @@ The goal of this system is to ensure:
 - Strict separation of concerns
 - Reproducible configuration across machines
 - Minimal context footprint for each agent
-- Clean integration with OpenCode, Claude, Copilot, and future runtimes
+- Clean integration with OpenCode, Claude, Copilot, Pi, and future runtimes
 
 Nothing inside this directory is automatically loaded by any agent.
 All loading is explicit and role‑based.
@@ -98,6 +98,7 @@ adapters/
   opencode/
   claude/
   copilot/
+  pi/
 ```
 
 **Contents:**
@@ -200,7 +201,7 @@ Nothing auto‑loads. Roles explicitly load only the tools they need.
 Each agent sees only the instructions and tools intended for its role.
 
 **Vendor‑agnostic:**
-The system works across OpenCode, Claude, Copilot, and future runtimes.
+The system works across OpenCode, Claude, Copilot, Pi, and future runtimes.
 
 **Reproducible:**
 The same `.agents` directory works identically across machines.

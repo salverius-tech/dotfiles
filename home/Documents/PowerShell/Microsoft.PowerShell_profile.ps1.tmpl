@@ -135,6 +135,12 @@ Set-Alias -Name kc -Value kubectl
 function l { Get-ChildItem -Force @args }
 function cddev { Set-Location $env:USERPROFILE\dev }
 
+# Pi coding agent helpers
+function pic { pi -c @args }
+function pir { pi -r @args }
+function pin { pi --no-session @args }
+function pi-readonly { pi --tools read,grep,find,ls @args }
+
 # Docker aliases (only if docker is installed)
 if (Get-Command docker -ErrorAction SilentlyContinue) {
     # Container Listing

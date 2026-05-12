@@ -1,7 +1,7 @@
 # Adapters
 
 Runtime-specific integration layers connecting the canonical `.agents/` knowledge base
-to individual agent runtimes (Claude Code, OpenCode, Copilot).
+to individual agent runtimes (Claude Code, OpenCode, Copilot, Pi).
 
 Adapters may reference skills but must not redefine them.
 
@@ -19,9 +19,14 @@ adapters/
 │   ├── skills/          51 OpenCode thin loaders → ~/.agents/skills/*/knowledge.md
 │   ├── maestro/         Maestro tool contract and validation
 │   └── planner.json     Role-adapter binding
-└── copilot/
-    ├── adapter.md       Per-project limitations, template strategy
-    └── skills/          2 Copilot-specific thin loaders
+├── copilot/
+│   ├── adapter.md       Per-project limitations, template strategy
+│   └── skills/          2 Copilot-specific thin loaders
+└── pi/
+    ├── adapter.md       Pi tool/session workflow and safety rules
+    ├── prompts/         Optional Pi prompt templates
+    ├── extensions/      Optional Pi TypeScript extensions
+    └── skills/          Pi-specific skill wrappers
 ```
 
 ## Rules

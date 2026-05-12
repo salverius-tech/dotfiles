@@ -43,7 +43,9 @@ check_forbidden() {
   matches=$(grep -nP "$pattern" "$TS_FILE" 2>/dev/null || true)
   if [[ -n "$matches" ]]; then
     echo "  VIOLATION: $label"
-    echo "$matches" | sed 's/^/    /'
+    while IFS= read -r match; do
+      echo "    $match"
+    done <<< "$matches"
     VIOLATIONS=$((VIOLATIONS + 1))
   fi
 }
@@ -109,7 +111,9 @@ if [[ -n "$env_lines" ]]; then
     done <<< "$env_lines"
   else
     echo "  VIOLATION: process.env used but getMaestroConfig() not found"
-    echo "$env_lines" | sed 's/^/    /'
+    while IFS= read -r env_line; do
+      echo "    $env_line"
+    done <<< "$env_lines"
     VIOLATIONS=$((VIOLATIONS + 1))
   fi
 fi

@@ -1,0 +1,43 @@
+{
+  "defaultThinkingLevel": "medium",
+  "hideThinkingBlock": false,
+  "enableInstallTelemetry": false,
+  "quietStartup": false,
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 16384,
+    "keepRecentTokens": 20000
+  },
+  "retry": {
+    "enabled": true,
+    "maxRetries": 3,
+    "provider": {
+      "maxRetryDelayMs": 60000
+    }
+  },
+  "enabledModels": [
+    "claude-*",
+    "gpt-4o*",
+    "gemini-*",
+    "openrouter/*",
+    "ollama/*"
+  ],
+  "skills": [
+    "~/.agents/adapters/pi/skills",
+    "~/.agents/adapters/opencode/skills"
+  ],
+  "prompts": [
+    "~/.agents/adapters/pi/prompts"
+  ],
+  "extensions": [
+    "~/.agents/adapters/pi/extensions"
+  ],
+  "enableSkillCommands": true,
+  "shellCommandPrefix": "shopt -s expand_aliases\n[ -f ~/.shell_aliases ] && . ~/.shell_aliases",
+{{- if eq .chezmoi.os "windows" }}
+  "shellPath": "C:\\Program Files\\Git\\bin\\bash.exe",
+{{- end }}
+  "warnings": {
+    "anthropicExtraUsage": true
+  }
+}

@@ -151,13 +151,26 @@ fi
 # SSH Agent - reuse existing agent across sessions
 if command -v ssh-agent &>/dev/null; then
     _ssh_agent_env="${HOME}/.ssh/agent-env"
+    _ssh_agent_valid=false
+
     if [ -f "${_ssh_agent_env}" ]; then
         # shellcheck source=/dev/null
         . "${_ssh_agent_env}" > /dev/null
+        if [ -n "${SSH_AUTH_SOCK:-}" ]; then
+            ssh-add -l &>/dev/null
+            case $? in
+                0|1) _ssh_agent_valid=true ;; # 0 = identities present, 1 = agent reachable but empty
+            esac
+        fi
     fi
-    if ! ssh-add -l &>/dev/null; then
-        eval "$(ssh-agent -s)" > "${_ssh_agent_env}"
+
+    if [ "${_ssh_agent_valid}" != true ]; then
+        mkdir -p "${HOME}/.ssh"
+        ssh-agent -s > "${_ssh_agent_env}"
         chmod 600 "${_ssh_agent_env}"
+        # shellcheck source=/dev/null
+        . "${_ssh_agent_env}" > /dev/null
     fi
-    unset _ssh_agent_env
+
+    unset _ssh_agent_env _ssh_agent_valid
 fi
