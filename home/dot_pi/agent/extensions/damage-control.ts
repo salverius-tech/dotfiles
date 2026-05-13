@@ -14,13 +14,37 @@ const sensitivePathPatterns = [
   /(^|[\\/])\.ssh([\\/]|$)/,
   /(^|[\\/])id_(rsa|dsa|ecdsa|ed25519)(\.|$)/,
   /(^|[\\/])\.credentials\.json$/,
+  /(^|[\\/])\.pypirc$/,
+  /(^|[\\/])pip\.conf$/,
+  /(^|[\\/])nuget\.config$/i,
+  /(^|[\\/])appsettings\.(production|prod)\.json$/i,
+  /(^|[\\/])secrets?\.json$/i,
+  /(^|[\\/])key\.properties$/,
+  /(^|[\\/])local\.properties$/,
+  /(^|[\\/])google-services\.json$/,
+  /(^|[\\/])GoogleService-Info\.plist$/,
+  /\.(jks|keystore)$/i,
   /(^|[\\/])credentials(\.|$)/i,
   /(^|[\\/])secrets?(\.|$)/i,
 ];
 
-function pathLooksSensitive(path: string | undefined): boolean {
+const generatedPathPatterns = [
+  /(^|[\\/])bin([\\/]|$)/,
+  /(^|[\\/])obj([\\/]|$)/,
+  /(^|[\\/])\.vs([\\/]|$)/,
+  /(^|[\\/])\.idea([\\/]|$)/,
+  /(^|[\\/])\.gradle([\\/]|$)/,
+  /(^|[\\/])build([\\/]|$)/,
+  /(^|[\\/])captures([\\/]|$)/,
+  /(^|[\\/])\.venv([\\/]|$)/,
+  /(^|[\\/])__pycache__([\\/]|$)/,
+  /(^|[\\/])\.pytest_cache([\\/]|$)/,
+  /(^|[\\/])node_modules([\\/]|$)/,
+];
+
+function pathMatchesAny(path: string | undefined, patterns: RegExp[]): boolean {
   if (!path) return false;
-  return sensitivePathPatterns.some((pattern) => pattern.test(path));
+  return patterns.some((pattern) => pattern.test(path));
 }
 
 export default function damageControl(pi: ExtensionAPI) {
@@ -38,8 +62,11 @@ export default function damageControl(pi: ExtensionAPI) {
 
     if (["write", "edit"].includes(event.toolName)) {
       const path = String((event.input as { path?: unknown }).path ?? "");
-      if (pathLooksSensitive(path)) {
+      if (pathMatchesAny(path, sensitivePathPatterns)) {
         return { block: true, reason: `Refusing to modify sensitive path: ${path}` };
+      }
+      if (pathMatchesAny(path, generatedPathPatterns)) {
+        return { block: true, reason: `Refusing to modify generated/dependency path: ${path}` };
       }
     }
   });
