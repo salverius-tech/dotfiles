@@ -19,6 +19,8 @@ maestro/
 The runtime implementation lives at `~/.config/opencode/tools/maestro.ts`.
 The canonical skill schemas live at `~/.agents/skills/maestro/`.
 
+OpenCode tool exports use canonical adapter names: prefix `maestro_` and replace dots from the Maestro manifest with underscores. For example, `memory.put` becomes `maestro_memory_put` and `vector.list_collections` becomes `maestro_vector_list_collections`. Legacy `maestro_vector_collections_*` aliases are intentionally not supported.
+
 ## Planner Configuration
 
 | File           | Purpose                                |

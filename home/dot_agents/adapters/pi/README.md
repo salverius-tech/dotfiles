@@ -16,3 +16,19 @@ adapters/pi/
 ```
 
 Global Pi configuration lives in `~/.pi/agent/` and may reference this adapter.
+
+## Maestro Integration
+
+The `extensions/maestro.ts` extension registers Pi tools for the current Maestro executor API. It uses the canonical `~/.agents/skills/maestro/maestro.json` registry and canonical adapter naming (`maestro_` prefix, dots converted to underscores):
+
+- `memory.put` → `maestro_memory_put`
+- `vector.list_collections` → `maestro_vector_list_collections`
+- `docker_run` → `maestro_docker_run`
+
+Runtime requirements:
+
+- `MAESTRO_BASE_URL` must be set for tool calls.
+- `MAESTRO_API_KEY` is sent as `X-API-Key` when set.
+- `MAESTRO_CLIENT_TIMEOUT_MS` optionally overrides the default 310s client timeout.
+
+Validation and Pi-specific contract files live under `maestro/`.

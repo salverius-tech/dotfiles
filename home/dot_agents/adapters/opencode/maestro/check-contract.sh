@@ -9,6 +9,7 @@
 #   1 — violations found
 
 set -euo pipefail
+export LC_ALL=C
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -61,8 +62,9 @@ check_forbidden '\bjsonSchemaToZodShape\b' "JSON-schema helper 'jsonSchemaToZodS
 check_forbidden '\bzodForType\b' "JSON-schema helper 'zodForType'"
 check_forbidden '\bJsonSchemaProp\b' "JSON-schema helper 'JsonSchemaProp'"
 
-# Forbidden export patterns
+# Forbidden export/name patterns
 check_forbidden '^\s*export\s+default\b' "Default export (must use named exports)"
+check_forbidden '\bmaestro_vector_collections_' "Legacy vector collection tool name (use maestro_vector_list/create/delete_collection)"
 
 # Double-wrapped args (fromPlugin wraps in z.object — passing z.object causes schema._zod.def error)
 check_forbidden 'args:\s*[sz]\.object\(' "Double-wrapped args (use plain shape, not z.object/s.object)"

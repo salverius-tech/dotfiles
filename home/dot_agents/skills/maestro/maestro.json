@@ -1,29 +1,77 @@
 {
   "name": "maestro",
-  "description": "Deterministic local execution service for shell commands, LLM inference, embeddings, vector operations, file I/O, and multi-step pipelines.",
+  "description": "Deterministic local execution service for shell commands, LLM inference, embeddings, vector operations, planner-managed memory, file I/O, Docker operations, service introspection, and multi-step pipelines.",
   "contract_version": "1.0",
-
+  "tool_contract_version": "1.2",
+  "naming": {
+    "manifest_to_adapter": "Prefix with maestro_ and replace dots with underscores, e.g. memory.put -> maestro_memory_put."
+  },
   "tools": [
     {
+      "name": "health",
+      "description": "Check Maestro service liveness.",
+      "method": "GET",
+      "path": "/health",
+      "input_schema": { "type": "object", "properties": {}, "required": [] }
+    },
+    {
+      "name": "health_detailed",
+      "description": "Check detailed Maestro health including backend and memory status.",
+      "method": "GET",
+      "path": "/health/detailed",
+      "input_schema": { "type": "object", "properties": {}, "required": [] }
+    },
+    {
+      "name": "capabilities",
+      "description": "List available tools, backends, backend capabilities, feature flags, and supported contract versions.",
+      "method": "GET",
+      "path": "/capabilities",
+      "input_schema": { "type": "object", "properties": {}, "required": [] }
+    },
+    {
+      "name": "manifest",
+      "description": "Fetch Maestro's machine-readable tool manifest with JSON schemas.",
+      "method": "GET",
+      "path": "/manifest",
+      "input_schema": { "type": "object", "properties": {}, "required": [] }
+    },
+    {
+      "name": "metrics",
+      "description": "Fetch Maestro runtime counters as JSON.",
+      "method": "GET",
+      "path": "/metrics",
+      "input_schema": { "type": "object", "properties": {}, "required": [] }
+    },
+    {
+      "name": "metrics_prometheus",
+      "description": "Fetch Maestro runtime counters in Prometheus/OpenMetrics text format.",
+      "method": "GET",
+      "path": "/metrics/prometheus",
+      "input_schema": { "type": "object", "properties": {}, "required": [] }
+    },
+    {
       "name": "run",
-      "description": "Execute a shell command and return stdout, stderr, and return code.",
+      "description": "Execute a shell command or script and return stdout/stderr.",
+      "method": "POST",
+      "path": "/run",
       "input_schema": {
         "type": "object",
         "properties": {
           "contract_version": { "type": "string" },
           "command": { "type": "string" },
-          "timeout": { "type": "integer", "nullable": true },
+          "timeout": { "type": "integer", "minimum": 1, "maximum": 600 },
           "workdir": { "type": "string", "nullable": true },
           "callback_url": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean", "nullable": true }
+          "dry_run": { "type": "boolean" }
         },
         "required": ["contract_version", "command"]
       }
     },
-
     {
       "name": "llm",
-      "description": "Run a local or configured LLM inference.",
+      "description": "Run inference on a local or configured LLM backend.",
+      "method": "POST",
+      "path": "/llm",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -31,70 +79,95 @@
           "model": { "type": "string" },
           "prompt": { "type": "string" },
           "system": { "type": "string", "nullable": true },
-          "temperature": { "type": "number", "nullable": true },
-          "max_tokens": { "type": "integer", "nullable": true },
+          "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+          "max_tokens": { "type": "integer", "minimum": 1, "maximum": 32768 },
           "backend": { "type": "string", "nullable": true },
           "quantization": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean", "nullable": true }
+          "callback_url": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean" }
         },
         "required": ["contract_version", "model", "prompt"]
       }
     },
-
     {
       "name": "embed",
-      "description": "Generate vector embeddings for text input.",
+      "description": "Generate vector embeddings for one or more text inputs.",
+      "method": "POST",
+      "path": "/embed",
       "input_schema": {
         "type": "object",
         "properties": {
           "contract_version": { "type": "string" },
-          "input": { "type": ["string", "array"] },
-          "model": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean", "nullable": true }
+          "input": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+          "model": { "type": "string" },
+          "callback_url": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean" }
         },
         "required": ["contract_version", "input"]
       }
     },
-
+    {
+      "name": "pipeline",
+      "description": "Execute a multi-step workflow with reference resolution.",
+      "method": "POST",
+      "path": "/pipeline",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "steps": { "type": "array", "items": { "type": "object" } },
+          "stop_on_error": { "type": "boolean" },
+          "callback_url": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean" }
+        },
+        "required": ["contract_version", "steps"]
+      }
+    },
     {
       "name": "vector.upsert",
-      "description": "Insert or update points in a vector collection.",
+      "description": "Upsert points into a vector collection.",
+      "method": "POST",
+      "path": "/vector/upsert",
       "input_schema": {
         "type": "object",
         "properties": {
           "contract_version": { "type": "string" },
           "collection": { "type": "string" },
-          "points": { "type": "array" },
+          "points": { "type": "array", "items": { "type": "object" } },
           "backend": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean", "nullable": true }
+          "callback_url": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean" }
         },
         "required": ["contract_version", "collection", "points"]
       }
     },
-
     {
       "name": "vector.search",
-      "description": "Search a vector collection using a query vector.",
+      "description": "Search a vector collection by vector similarity.",
+      "method": "POST",
+      "path": "/vector/search",
       "input_schema": {
         "type": "object",
         "properties": {
           "contract_version": { "type": "string" },
           "collection": { "type": "string" },
-          "vector": { "type": "array" },
-          "limit": { "type": "integer" },
-          "filter": { "type": "object", "nullable": true },
-          "with_payload": { "type": "boolean", "nullable": true },
-          "with_vectors": { "type": "boolean", "nullable": true },
+          "vector": { "type": "array", "items": { "type": "number" } },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 1000 },
+          "filter": { "type": "object" },
+          "with_payload": { "type": "boolean" },
+          "with_vectors": { "type": "boolean" },
           "backend": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean", "nullable": true }
+          "callback_url": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean" }
         },
-        "required": ["contract_version", "collection", "vector", "limit"]
+        "required": ["contract_version", "collection", "vector"]
       }
     },
-
     {
       "name": "vector.delete",
       "description": "Delete points from a vector collection.",
+      "method": "POST",
+      "path": "/vector/delete",
       "input_schema": {
         "type": "object",
         "properties": {
@@ -102,108 +175,194 @@
           "collection": { "type": "string" },
           "ids": { "type": "array" },
           "backend": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean", "nullable": true }
+          "callback_url": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean" }
         },
         "required": ["contract_version", "collection", "ids"]
       }
     },
-
     {
-      "name": "file_read",
-      "description": "Read a file from the Maestro base directory.",
-      "input_schema": {
-        "type": "object",
-        "properties": {
-          "contract_version": { "type": "string" },
-          "path": { "type": "string" },
-          "dry_run": { "type": "boolean", "nullable": true }
-        },
-        "required": ["contract_version", "path"]
-      }
+      "name": "vector.list_collections",
+      "description": "List all collections in the vector backend.",
+      "method": "GET",
+      "path": "/vector/collections",
+      "input_schema": { "type": "object", "properties": { "backend": { "type": "string", "nullable": true } }, "required": [] }
     },
-
     {
-      "name": "file_write",
-      "description": "Write content to a file in the Maestro base directory.",
-      "input_schema": {
-        "type": "object",
-        "properties": {
-          "contract_version": { "type": "string" },
-          "path": { "type": "string" },
-          "content": { "type": "string" },
-          "mode": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean", "nullable": true }
-        },
-        "required": ["contract_version", "path", "content"]
-      }
-    },
-
-    {
-      "name": "pipeline",
-      "description": "Execute a multi-step workflow with optional output chaining.",
-      "input_schema": {
-        "type": "object",
-        "properties": {
-          "contract_version": { "type": "string" },
-          "steps": { "type": "array" },
-          "stop_on_error": { "type": "boolean", "nullable": true },
-          "callback_url": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean", "nullable": true }
-        },
-        "required": ["contract_version", "steps"]
-      }
-    },
-
-    {
-      "name": "health",
-      "description": "Check Maestro service health and liveness.",
-      "input_schema": {
-        "type": "object",
-        "properties": {},
-        "required": []
-      }
-    },
-
-    {
-      "name": "vector_collections_list",
-      "description": "List all vector collections.",
-      "input_schema": {
-        "type": "object",
-        "properties": {
-          "backend": { "type": "string", "nullable": true }
-        },
-        "required": []
-      }
-    },
-
-    {
-      "name": "vector_collections_create",
-      "description": "Create a vector collection.",
+      "name": "vector.create_collection",
+      "description": "Create a new vector collection.",
+      "method": "POST",
+      "path": "/vector/collections",
       "input_schema": {
         "type": "object",
         "properties": {
           "contract_version": { "type": "string" },
           "name": { "type": "string" },
-          "vector_size": { "type": "integer" },
-          "distance": { "type": "string", "nullable": true },
-          "if_not_exists": { "type": "boolean", "nullable": true },
-          "options": { "type": "object", "nullable": true },
-          "backend": { "type": "string", "nullable": true }
+          "vector_size": { "type": "integer", "minimum": 1 },
+          "distance": { "type": "string" },
+          "if_not_exists": { "type": "boolean" },
+          "options": { "type": "object" },
+          "backend": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean" }
         },
         "required": ["contract_version", "name", "vector_size"]
       }
     },
-
     {
-      "name": "vector_collections_delete",
+      "name": "vector.delete_collection",
       "description": "Delete a vector collection.",
+      "method": "DELETE",
+      "path": "/vector/collections/{name}",
+      "input_schema": { "type": "object", "properties": { "name": { "type": "string" } }, "required": ["name"] }
+    },
+    {
+      "name": "memory.put",
+      "description": "Store a planner-managed memory item and optionally index it semantically.",
+      "method": "POST",
+      "path": "/memory/put",
       "input_schema": {
         "type": "object",
         "properties": {
-          "name": { "type": "string" }
+          "contract_version": { "type": "string" },
+          "namespace": { "type": "string" },
+          "session_id": { "type": "string", "nullable": true },
+          "kind": { "type": "string", "enum": ["message", "observation", "decision", "artifact", "summary", "plan", "fact"] },
+          "text": { "type": "string" },
+          "metadata": { "type": "object" },
+          "index_semantic": { "type": "boolean" },
+          "ttl_seconds": { "type": "integer", "minimum": 1, "nullable": true },
+          "id": { "type": "string", "nullable": true },
+          "dedupe_key": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean" }
         },
-        "required": ["name"]
+        "required": ["contract_version", "namespace", "kind", "text"]
       }
+    },
+    {
+      "name": "memory.get",
+      "description": "Retrieve a planner-managed memory item by namespace and identifier.",
+      "method": "POST",
+      "path": "/memory/get",
+      "input_schema": { "type": "object", "properties": { "contract_version": { "type": "string" }, "namespace": { "type": "string" }, "id": { "type": "string" }, "dry_run": { "type": "boolean" } }, "required": ["contract_version", "namespace", "id"] }
+    },
+    {
+      "name": "memory.search",
+      "description": "Search planner-managed memory items using exact filters or semantic retrieval.",
+      "method": "POST",
+      "path": "/memory/search",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "namespace": { "type": "string" },
+          "session_id": { "type": "string", "nullable": true },
+          "query": { "type": "string", "nullable": true },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100 },
+          "kind": { "type": "string", "nullable": true },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "semantic": { "type": "boolean" },
+          "include_expired": { "type": "boolean" },
+          "dry_run": { "type": "boolean" }
+        },
+        "required": ["contract_version", "namespace"]
+      }
+    },
+    {
+      "name": "memory.list",
+      "description": "List planner-managed memory items using exact filters only.",
+      "method": "POST",
+      "path": "/memory/list",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "namespace": { "type": "string" },
+          "session_id": { "type": "string", "nullable": true },
+          "kind": { "type": "string", "nullable": true },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "include_expired": { "type": "boolean" },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100 },
+          "dry_run": { "type": "boolean" }
+        },
+        "required": ["contract_version", "namespace"]
+      }
+    },
+    {
+      "name": "memory.delete",
+      "description": "Delete a planner-managed memory item and remove its semantic index entry.",
+      "method": "POST",
+      "path": "/memory/delete",
+      "input_schema": { "type": "object", "properties": { "contract_version": { "type": "string" }, "namespace": { "type": "string" }, "id": { "type": "string" }, "dry_run": { "type": "boolean" } }, "required": ["contract_version", "namespace", "id"] }
+    },
+    {
+      "name": "file_read",
+      "description": "Read a file from the allowed base directory.",
+      "method": "POST",
+      "path": "/file/read",
+      "input_schema": { "type": "object", "properties": { "contract_version": { "type": "string" }, "path": { "type": "string" }, "dry_run": { "type": "boolean" } }, "required": ["contract_version", "path"] }
+    },
+    {
+      "name": "file_write",
+      "description": "Write content to a file in the allowed base directory.",
+      "method": "POST",
+      "path": "/file/write",
+      "input_schema": { "type": "object", "properties": { "contract_version": { "type": "string" }, "path": { "type": "string" }, "content": { "type": "string" }, "mode": { "type": "string", "enum": ["overwrite", "append"] }, "dry_run": { "type": "boolean" } }, "required": ["contract_version", "path", "content"] }
+    },
+    {
+      "name": "docker_run",
+      "description": "Run a Docker container with specified image and configuration.",
+      "method": "POST",
+      "path": "/docker/run",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": { "type": "string" },
+          "image": { "type": "string" },
+          "command": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }, { "type": "null" }] },
+          "env": { "type": "object", "additionalProperties": { "type": "string" } },
+          "volumes": { "type": "object", "additionalProperties": { "type": "string" } },
+          "detach": { "type": "boolean" },
+          "remove": { "type": "boolean" },
+          "name": { "type": "string", "nullable": true },
+          "dry_run": { "type": "boolean" }
+        },
+        "required": ["contract_version", "image"]
+      }
+    },
+    {
+      "name": "docker_status",
+      "description": "Inspect a running Docker container.",
+      "method": "GET",
+      "path": "/docker/{container_id}/status",
+      "input_schema": { "type": "object", "properties": { "container_id": { "type": "string" } }, "required": ["container_id"] }
+    },
+    {
+      "name": "docker_logs",
+      "description": "Fetch logs from a Docker container.",
+      "method": "GET",
+      "path": "/docker/{container_id}/logs",
+      "input_schema": { "type": "object", "properties": { "container_id": { "type": "string" }, "tail": { "type": "integer", "minimum": 1, "maximum": 10000 } }, "required": ["container_id"] }
+    },
+    {
+      "name": "docker_exec",
+      "description": "Execute a command in a running Docker container.",
+      "method": "POST",
+      "path": "/docker/{container_id}/exec",
+      "input_schema": { "type": "object", "properties": { "contract_version": { "type": "string" }, "container_id": { "type": "string" }, "command": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] }, "dry_run": { "type": "boolean" } }, "required": ["contract_version", "container_id", "command"] }
+    },
+    {
+      "name": "docker_stop",
+      "description": "Stop a running Docker container.",
+      "method": "POST",
+      "path": "/docker/{container_id}/stop",
+      "input_schema": { "type": "object", "properties": { "container_id": { "type": "string" } }, "required": ["container_id"] }
+    },
+    {
+      "name": "docker_remove",
+      "description": "Remove a Docker container.",
+      "method": "DELETE",
+      "path": "/docker/{container_id}",
+      "input_schema": { "type": "object", "properties": { "container_id": { "type": "string" } }, "required": ["container_id"] }
     }
   ]
 }

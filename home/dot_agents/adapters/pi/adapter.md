@@ -22,6 +22,18 @@ Pi loads resources from:
 - `~/.pi/agent/skills/` and `~/.agents/skills/` for Agent Skills
 - `.pi/` and `.agents/` directories in projects for project-level resources
 
+## Maestro Integration
+
+Pi loads `~/.agents/adapters/pi/extensions/maestro.ts` through the global `extensions` setting. The extension registers Maestro tools using canonical names derived from the Maestro manifest:
+
+- prefix: `maestro_`
+- dots become underscores
+- no legacy aliases such as `maestro_vector_collections_list`
+
+Examples: `maestro_run`, `maestro_memory_put`, `maestro_vector_list_collections`, `maestro_docker_logs`.
+
+Set `MAESTRO_BASE_URL` before using Maestro tools. Set `MAESTRO_API_KEY` when the server requires authentication. Feature-gated server capabilities (shell, Docker, memory) are controlled by Maestro server environment variables and are not bypassed by Pi.
+
 ## Session Workflow
 
 - Use `/tree`, `/fork`, and `/compact` for long sessions instead of losing context.

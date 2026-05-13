@@ -40,6 +40,8 @@ maestro/
 Runtime implementation: `~/.config/opencode/tools/maestro.ts`
 Canonical skill schemas: `~/.agents/skills/maestro/`
 
+Tool exports use canonical adapter names only: prefix `maestro_` and replace dots from Maestro manifest names with underscores (`vector.list_collections` → `maestro_vector_list_collections`). Legacy `maestro_vector_collections_*` aliases are intentionally unsupported.
+
 ## Planner Configuration
 
 | File           | Purpose                                |
