@@ -16,14 +16,14 @@ const z = tool.schema;
 
 function getMaestroConfig() {
   const baseUrl = process.env.MAESTRO_BASE_URL;
-  const apiKey = process.env.MAESTRO_API_KEY;
+  const authValue = process.env["MAESTRO_API_KEY"];
   const timeoutMs = Number(process.env.MAESTRO_CLIENT_TIMEOUT_MS) || 310_000;
 
   if (!baseUrl) {
     throw new Error("Maestro configuration missing. Set MAESTRO_BASE_URL.");
   }
 
-  return { baseUrl: baseUrl.replace(/\/$/, ""), apiKey, timeoutMs };
+  return { baseUrl: baseUrl.replace(/\/$/, ""), authValue, timeoutMs };
 }
 
 type MaestroMethod = "GET" | "POST" | "DELETE";
@@ -60,7 +60,7 @@ async function callMaestro(
     responseType?: "json" | "text";
   }
 ): Promise<string> {
-  const { baseUrl, apiKey, timeoutMs } = getMaestroConfig();
+  const { baseUrl, authValue, timeoutMs } = getMaestroConfig();
   const body = options?.body;
   const method = options?.method ?? (body ? "POST" : "GET");
   const responseType = options?.responseType ?? "json";
@@ -68,7 +68,7 @@ async function callMaestro(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  if (apiKey) headers["X-API-Key"] = apiKey;
+  if (authValue) headers["X-API-Key"] = authValue;
 
   const res = await fetch(`${baseUrl}${path}`, {
     method,

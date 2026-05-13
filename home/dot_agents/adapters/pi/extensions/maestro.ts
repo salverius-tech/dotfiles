@@ -18,14 +18,14 @@ type MaestroBody = Record<string, unknown>;
 
 function getMaestroConfig() {
   const baseUrl = process.env.MAESTRO_BASE_URL;
-  const apiKey = process.env.MAESTRO_API_KEY;
+  const authValue = process.env["MAESTRO_API_KEY"];
   const timeoutMs = Number(process.env.MAESTRO_CLIENT_TIMEOUT_MS) || 310_000;
 
   if (!baseUrl) {
     throw new Error("Maestro configuration missing. Set MAESTRO_BASE_URL.");
   }
 
-  return { baseUrl: baseUrl.replace(/\/$/, ""), apiKey, timeoutMs };
+  return { baseUrl: baseUrl.replace(/\/$/, ""), authValue, timeoutMs };
 }
 
 function stripUndefined<T extends Record<string, unknown>>(value: T): T {
@@ -59,13 +59,13 @@ async function callMaestro(
     signal?: AbortSignal;
   },
 ): Promise<unknown> {
-  const { baseUrl, apiKey, timeoutMs } = getMaestroConfig();
+  const { baseUrl, authValue, timeoutMs } = getMaestroConfig();
   const body = options?.body;
   const method = options?.method ?? (body ? "POST" : "GET");
   const responseType = options?.responseType ?? "json";
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (apiKey) headers["X-API-Key"] = apiKey;
+  if (authValue) headers["X-API-Key"] = authValue;
 
   const timeoutSignal = AbortSignal.timeout(timeoutMs);
   const signal = options?.signal ? AbortSignal.any([options.signal, timeoutSignal]) : timeoutSignal;
