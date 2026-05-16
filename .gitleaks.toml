@@ -16,15 +16,26 @@ regex = '''(?i)(api[_-]?key|token|secret|password|passwd|credential)\s*=\s*['\"]
 tags = ["secret", "env"]
 
 [allowlist]
-description = "Allow documented placeholder variable names and package metadata"
+description = "Allow documented placeholder variable names, keyboard shortcut configs, and package metadata"
 regexes = [
   '''OPENROUTER_API_KEY''',
   '''ANTHROPIC_API_KEY''',
   '''GEMINI_API_KEY''',
   '''CHEZMOI_GIT_EMAIL''',
-  '''CHEZMOI_GIT_NAME'''
+  '''CHEZMOI_GIT_NAME''',
+  '''MAESTRO_API_KEY''',
+  '''MAESTRO_REDACTED''',
+  '''create_continuation_token\(''',
+  '''parse_continuation_token\('''
 ]
 paths = [
   '''home/dot_pi/agent/models\.json\.tmpl''',
-  '''README\.md'''
+  '''README\.md''',
+  '''home/dot_agents/adapters/pi/extensions/maestro\.ts''',
+  '''home/private_dot_config/opencode/tools/maestro\.ts''',
+  '''home/AppData/Local/Microsoft/Windows Terminal/Fragments/dotfiles/settings\.json''',
+  '''home/AppData/Local/Packages/Microsoft\.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings\.json\.tmpl''',
+  '''home/AppData/Roaming/Code/User/keybindings\.json\.tmpl''',
+  '''home/dot_claude/tools/flaresolverr-mcp/SESSION_SNAPSHOT\.md''',
+  '''\.claude/tools/flaresolverr-mcp/SESSION_SNAPSHOT\.md'''
 ]
