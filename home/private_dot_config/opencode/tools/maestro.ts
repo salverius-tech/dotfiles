@@ -213,6 +213,36 @@ export const maestro_embed = tool({
   },
 });
 
+export const maestro_rerank = tool({
+  description: `Rank candidate documents by deterministic local lexical relevance. ${ENV_NOTE}`,
+  args: {
+    query: z.string(),
+    documents: z.array(z.unknown()),
+    top_k: z.number().int().nullable().optional(),
+    algorithm: z.string().nullable().optional(),
+    dry_run: z.boolean().nullable().optional(),
+  },
+  async execute(args, _context) {
+    if (args.dry_run) return planned("rerank", args);
+    return callMaestro("/rerank", { body: { ...args } });
+  },
+});
+
+export const maestro_text_chunk = tool({
+  description: `Split text into deterministic overlapping chunks by characters or words. ${ENV_NOTE}`,
+  args: {
+    text: z.string(),
+    strategy: z.string().nullable().optional(),
+    chunk_size: z.number().int(),
+    overlap: z.number().int().nullable().optional(),
+    dry_run: z.boolean().nullable().optional(),
+  },
+  async execute(args, _context) {
+    if (args.dry_run) return planned("text.chunk", args);
+    return callMaestro("/text/chunk", { body: { ...args } });
+  },
+});
+
 export const maestro_pipeline = tool({
   description: `Execute a Maestro pipeline. ${ENV_NOTE}`,
   args: {
@@ -418,6 +448,177 @@ export const maestro_file_write = tool({
   async execute(args, _context) {
     if (args.dry_run) return planned("file_write", args);
     return callMaestro("/file/write", { body: { ...args } });
+  },
+});
+
+export const maestro_artifact_put = tool({
+  description: `Store a text artifact in Maestro's artifact store. ${ENV_NOTE}`,
+  args: {
+    content: z.string(),
+    id: z.string().nullable().optional(),
+    filename: z.string().nullable().optional(),
+    content_type: z.string().nullable().optional(),
+    metadata: z.record(z.string(), z.unknown()).nullable().optional(),
+    ttl_seconds: z.number().int().nullable().optional(),
+    expires_at: z.string().nullable().optional(),
+    dry_run: z.boolean().nullable().optional(),
+  },
+  async execute(args, _context) {
+    if (args.dry_run) return planned("artifact.put", args);
+    return callMaestro("/artifacts/put", { body: { ...args } });
+  },
+});
+
+export const maestro_artifact_list = tool({
+  description: `List text artifact metadata from Maestro's artifact store. ${ENV_NOTE}`,
+  args: {
+    include_expired: z.boolean().nullable().optional(),
+    filename: z.string().nullable().optional(),
+    content_type: z.string().nullable().optional(),
+    metadata_key: z.string().nullable().optional(),
+    metadata_value: z.string().nullable().optional(),
+    limit: z.number().int().nullable().optional(),
+    offset: z.number().int().nullable().optional(),
+  },
+  async execute(args, _context) {
+    return callMaestro(`/artifacts${queryString(args)}`);
+  },
+});
+
+export const maestro_artifact_get = tool({
+  description: `Retrieve a text artifact from Maestro's artifact store. ${ENV_NOTE}`,
+  args: {
+    artifact_id: z.string(),
+    include_expired: z.boolean().nullable().optional(),
+  },
+  async execute(args, _context) {
+    return callMaestro(`/artifacts/${encodeURIComponent(args.artifact_id)}${queryString({ include_expired: args.include_expired })}`);
+  },
+});
+
+export const maestro_artifact_delete = tool({
+  description: `Delete a text artifact from Maestro's artifact store. ${ENV_NOTE}`,
+  args: {
+    artifact_id: z.string(),
+  },
+  async execute(args, _context) {
+    return callMaestro(`/artifacts/${encodeURIComponent(args.artifact_id)}`, { method: "DELETE" });
+  },
+});
+
+export const maestro_artifact_cleanup_expired = tool({
+  description: `Delete expired text artifacts from Maestro's artifact store. ${ENV_NOTE}`,
+  args: {
+    dry_run: z.boolean().nullable().optional(),
+  },
+  async execute(args, _context) {
+    if (args.dry_run) return planned("artifact.cleanup_expired", args);
+    return callMaestro("/artifacts/cleanup-expired", { body: { ...args } });
+  },
+});
+
+export const maestro_audit_list = tool({
+  description: `List retained Maestro audit events. ${ENV_NOTE}`,
+  args: {
+    action: z.string().nullable().optional(),
+    destructive: z.boolean().nullable().optional(),
+    status: z.string().nullable().optional(),
+    principal: z.string().nullable().optional(),
+    key_id: z.string().nullable().optional(),
+    limit: z.number().int().nullable().optional(),
+    offset: z.number().int().nullable().optional(),
+  },
+  async execute(args, _context) {
+    return callMaestro(`/audit${queryString(args)}`);
+  },
+});
+
+export const maestro_tasks_submit = tool({
+  description: `Submit a Maestro tool request for managed async execution. ${ENV_NOTE}`,
+  args: {
+    tool: z.string(),
+    params: z.record(z.string(), z.unknown()).nullable().optional(),
+    dry_run: z.boolean().nullable().optional(),
+  },
+  async execute(args, _context) {
+    if (args.dry_run) return planned("tasks.submit", args);
+    return callMaestro("/tasks", { body: { ...args } });
+  },
+});
+
+export const maestro_tasks_list = tool({
+  description: `List retained Maestro managed async tasks. ${ENV_NOTE}`,
+  args: {
+    status: z.string().nullable().optional(),
+    tool: z.string().nullable().optional(),
+    limit: z.number().int().nullable().optional(),
+    offset: z.number().int().nullable().optional(),
+  },
+  async execute(args, _context) {
+    return callMaestro(`/tasks${queryString(args)}`);
+  },
+});
+
+export const maestro_tasks_get = tool({
+  description: `Retrieve a Maestro managed async task snapshot. ${ENV_NOTE}`,
+  args: {
+    task_id: z.string(),
+  },
+  async execute(args, _context) {
+    return callMaestro(`/tasks/${encodeURIComponent(args.task_id)}`);
+  },
+});
+
+export const maestro_tasks_logs = tool({
+  description: `Retrieve lifecycle logs for a Maestro managed async task. ${ENV_NOTE}`,
+  args: {
+    task_id: z.string(),
+  },
+  async execute(args, _context) {
+    return callMaestro(`/tasks/${encodeURIComponent(args.task_id)}/logs`);
+  },
+});
+
+export const maestro_tasks_cancel = tool({
+  description: `Request cancellation of a Maestro managed async task. ${ENV_NOTE}`,
+  args: {
+    task_id: z.string(),
+  },
+  async execute(args, _context) {
+    return callMaestro(`/tasks/${encodeURIComponent(args.task_id)}/cancel`, { method: "POST" });
+  },
+});
+
+export const maestro_tasks_retry = tool({
+  description: `Retry a Maestro managed async task as a new task. ${ENV_NOTE}`,
+  args: {
+    task_id: z.string(),
+  },
+  async execute(args, _context) {
+    return callMaestro(`/tasks/${encodeURIComponent(args.task_id)}/retry`, { method: "POST" });
+  },
+});
+
+export const maestro_tasks_delete = tool({
+  description: `Delete a retained Maestro managed async task. ${ENV_NOTE}`,
+  args: {
+    task_id: z.string(),
+  },
+  async execute(args, _context) {
+    return callMaestro(`/tasks/${encodeURIComponent(args.task_id)}`, { method: "DELETE" });
+  },
+});
+
+export const maestro_tasks_cleanup = tool({
+  description: `Delete retained terminal Maestro task snapshots matching explicit filters. ${ENV_NOTE}`,
+  args: {
+    statuses: z.array(z.string()).nullable().optional(),
+    tool: z.string().nullable().optional(),
+    dry_run: z.boolean().nullable().optional(),
+  },
+  async execute(args, _context) {
+    if (args.dry_run) return planned("tasks.cleanup", args);
+    return callMaestro("/tasks/cleanup", { body: { ...args } });
   },
 });
 

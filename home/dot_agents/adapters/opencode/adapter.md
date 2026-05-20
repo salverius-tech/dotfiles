@@ -42,6 +42,8 @@ Canonical skill schemas: `~/.agents/skills/maestro/`
 
 Tool exports use canonical adapter names only: prefix `maestro_` and replace dots from Maestro manifest names with underscores (`vector.list_collections` → `maestro_vector_list_collections`). Legacy `maestro_vector_collections_*` aliases are intentionally unsupported.
 
+The current integration exposes the full 45-tool Maestro surface, including reranking, text chunking, artifacts, audit listing, managed async tasks, memory, vectors, file I/O, Docker, metrics, and service introspection. `GET /capabilities` is scope-aware; scoped API keys may hide tools that the current key cannot use.
+
 ## Planner Configuration
 
 | File           | Purpose                                |

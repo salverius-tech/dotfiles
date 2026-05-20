@@ -55,6 +55,8 @@ Examples:
 - `vector.create_collection` → `maestro_vector_create_collection`
 - `vector.delete_collection` → `maestro_vector_delete_collection`
 - `memory.put` → `maestro_memory_put`
+- `artifact.cleanup_expired` → `maestro_artifact_cleanup_expired`
+- `tasks.submit` → `maestro_tasks_submit`
 
 The legacy `maestro_vector_collections_*` names must never be registered.
 
@@ -64,6 +66,7 @@ All environment variable reads must occur lazily inside `getMaestroConfig()` or 
 
 - `MAESTRO_BASE_URL` is required for actual calls.
 - `MAESTRO_API_KEY` is optional at load time and sent as `X-API-Key` only when present.
+- `MAESTRO_API_KEYS` can configure scoped keys on the server; the Pi adapter does not parse it.
 - `MAESTRO_CLIENT_TIMEOUT_MS` defaults to `310000`.
 
 ## Fetch Cancellation
@@ -72,7 +75,7 @@ Pi passes an `AbortSignal` to tool execution. Maestro tools must pass it to `fet
 
 ## Contract Version Injection
 
-`callMaestro()` injects `contract_version: "1.0"` into POST bodies. GET and DELETE requests do not need a request body unless Maestro adds such a route later.
+`callMaestro()` injects `contract_version: "1.0"` into POST bodies that pass a request body. GET and DELETE requests do not need a request body unless Maestro adds such a route later. Path-only POST control operations such as task cancel/retry and Docker stop do not require a versioned body.
 
 ## Return Contract
 

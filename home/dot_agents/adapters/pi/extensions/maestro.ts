@@ -244,6 +244,38 @@ export default function maestroExtension(pi: ExtensionAPI) {
     execute: (params, signal) => params.dry_run ? planned("embed", params as MaestroBody) : callMaestro("/embed", { body: params as MaestroBody, signal }),
   });
 
+  const RerankParams = Type.Object({
+    query: Type.String(),
+    documents: Type.Array(Type.Any()),
+    top_k: OptInt(),
+    algorithm: OptString(),
+    dry_run: DryRun(),
+  });
+  registerMaestroTool(pi, {
+    name: "maestro_rerank",
+    label: "Maestro Rerank",
+    description: "Rank candidate documents by deterministic local lexical relevance.",
+    promptSnippet: "Rank candidate documents by local lexical relevance",
+    parameters: RerankParams,
+    execute: (params, signal) => params.dry_run ? planned("rerank", params as MaestroBody) : callMaestro("/rerank", { body: params as MaestroBody, signal }),
+  });
+
+  const TextChunkParams = Type.Object({
+    text: Type.String(),
+    strategy: OptString(),
+    chunk_size: Type.Integer(),
+    overlap: OptInt(),
+    dry_run: DryRun(),
+  });
+  registerMaestroTool(pi, {
+    name: "maestro_text_chunk",
+    label: "Maestro Text Chunk",
+    description: "Split text into deterministic overlapping chunks by characters or words.",
+    promptSnippet: "Split text into deterministic chunks",
+    parameters: TextChunkParams,
+    execute: (params, signal) => params.dry_run ? planned("text.chunk", params as MaestroBody) : callMaestro("/text/chunk", { body: params as MaestroBody, signal }),
+  });
+
   const PipelineParams = Type.Object({
     steps: Type.Array(Type.Any()),
     stop_on_error: OptBool(),
@@ -428,6 +460,164 @@ export default function maestroExtension(pi: ExtensionAPI) {
     description: "Write a file in Maestro's allowed file base directory.",
     parameters: Type.Object({ path: Type.String(), content: Type.String(), mode: OptString(), dry_run: DryRun() }),
     execute: (params, signal) => params.dry_run ? planned("file_write", params as MaestroBody) : callMaestro("/file/write", { body: params as MaestroBody, signal }),
+  });
+
+  const ArtifactPutParams = Type.Object({
+    content: Type.String(),
+    id: OptString(),
+    filename: OptString(),
+    content_type: OptString(),
+    metadata: OptRecord(),
+    ttl_seconds: OptInt(),
+    expires_at: OptString(),
+    dry_run: DryRun(),
+  });
+  registerMaestroTool(pi, {
+    name: "maestro_artifact_put",
+    label: "Maestro Artifact Put",
+    description: "Store a text artifact in Maestro's artifact store.",
+    promptSnippet: "Store a planner-visible text artifact",
+    parameters: ArtifactPutParams,
+    execute: (params, signal) => params.dry_run ? planned("artifact.put", params as MaestroBody) : callMaestro("/artifacts/put", { body: params as MaestroBody, signal }),
+  });
+
+  const ArtifactListParams = Type.Object({
+    include_expired: OptBool(),
+    filename: OptString(),
+    content_type: OptString(),
+    metadata_key: OptString(),
+    metadata_value: OptString(),
+    limit: OptInt(),
+    offset: OptInt(),
+  });
+  registerMaestroTool(pi, {
+    name: "maestro_artifact_list",
+    label: "Maestro Artifact List",
+    description: "List text artifact metadata from Maestro's artifact store.",
+    parameters: ArtifactListParams,
+    execute: (params, signal) => callMaestro(`/artifacts${queryString(params as MaestroBody)}`, { signal }),
+  });
+
+  registerMaestroTool(pi, {
+    name: "maestro_artifact_get",
+    label: "Maestro Artifact Get",
+    description: "Retrieve a text artifact from Maestro's artifact store.",
+    parameters: Type.Object({ artifact_id: Type.String(), include_expired: OptBool() }),
+    execute: (params, signal) => callMaestro(`/artifacts/${encodeURIComponent(params.artifact_id)}${queryString({ include_expired: params.include_expired })}`, { signal }),
+  });
+
+  registerMaestroTool(pi, {
+    name: "maestro_artifact_delete",
+    label: "Maestro Artifact Delete",
+    description: "Delete a text artifact from Maestro's artifact store.",
+    parameters: Type.Object({ artifact_id: Type.String() }),
+    execute: (params, signal) => callMaestro(`/artifacts/${encodeURIComponent(params.artifact_id)}`, { method: "DELETE", signal }),
+  });
+
+  registerMaestroTool(pi, {
+    name: "maestro_artifact_cleanup_expired",
+    label: "Maestro Artifact Cleanup Expired",
+    description: "Delete expired text artifacts from Maestro's artifact store.",
+    parameters: Type.Object({ dry_run: DryRun() }),
+    execute: (params, signal) => params.dry_run ? planned("artifact.cleanup_expired", params as MaestroBody) : callMaestro("/artifacts/cleanup-expired", { body: params as MaestroBody, signal }),
+  });
+
+  const AuditListParams = Type.Object({
+    action: OptString(),
+    destructive: OptBool(),
+    status: OptString(),
+    principal: OptString(),
+    key_id: OptString(),
+    limit: OptInt(),
+    offset: OptInt(),
+  });
+  registerMaestroTool(pi, {
+    name: "maestro_audit_list",
+    label: "Maestro Audit List",
+    description: "List retained Maestro audit events.",
+    parameters: AuditListParams,
+    execute: (params, signal) => callMaestro(`/audit${queryString(params as MaestroBody)}`, { signal }),
+  });
+
+  const TasksSubmitParams = Type.Object({
+    tool: Type.String(),
+    params: OptRecord(),
+    dry_run: DryRun(),
+  });
+  registerMaestroTool(pi, {
+    name: "maestro_tasks_submit",
+    label: "Maestro Tasks Submit",
+    description: "Submit a Maestro tool request for managed async execution.",
+    promptSnippet: "Submit a managed async Maestro task",
+    parameters: TasksSubmitParams,
+    execute: (params, signal) => params.dry_run ? planned("tasks.submit", params as MaestroBody) : callMaestro("/tasks", { body: params as MaestroBody, signal }),
+  });
+
+  const TasksListParams = Type.Object({
+    status: OptString(),
+    tool: OptString(),
+    limit: OptInt(),
+    offset: OptInt(),
+  });
+  registerMaestroTool(pi, {
+    name: "maestro_tasks_list",
+    label: "Maestro Tasks List",
+    description: "List retained Maestro managed async tasks.",
+    parameters: TasksListParams,
+    execute: (params, signal) => callMaestro(`/tasks${queryString(params as MaestroBody)}`, { signal }),
+  });
+
+  registerMaestroTool(pi, {
+    name: "maestro_tasks_get",
+    label: "Maestro Tasks Get",
+    description: "Retrieve a Maestro managed async task snapshot.",
+    parameters: Type.Object({ task_id: Type.String() }),
+    execute: (params, signal) => callMaestro(`/tasks/${encodeURIComponent(params.task_id)}`, { signal }),
+  });
+
+  registerMaestroTool(pi, {
+    name: "maestro_tasks_logs",
+    label: "Maestro Tasks Logs",
+    description: "Retrieve lifecycle logs for a Maestro managed async task.",
+    parameters: Type.Object({ task_id: Type.String() }),
+    execute: (params, signal) => callMaestro(`/tasks/${encodeURIComponent(params.task_id)}/logs`, { signal }),
+  });
+
+  registerMaestroTool(pi, {
+    name: "maestro_tasks_cancel",
+    label: "Maestro Tasks Cancel",
+    description: "Request cancellation of a Maestro managed async task.",
+    parameters: Type.Object({ task_id: Type.String() }),
+    execute: (params, signal) => callMaestro(`/tasks/${encodeURIComponent(params.task_id)}/cancel`, { method: "POST", signal }),
+  });
+
+  registerMaestroTool(pi, {
+    name: "maestro_tasks_retry",
+    label: "Maestro Tasks Retry",
+    description: "Retry a Maestro managed async task as a new task.",
+    parameters: Type.Object({ task_id: Type.String() }),
+    execute: (params, signal) => callMaestro(`/tasks/${encodeURIComponent(params.task_id)}/retry`, { method: "POST", signal }),
+  });
+
+  registerMaestroTool(pi, {
+    name: "maestro_tasks_delete",
+    label: "Maestro Tasks Delete",
+    description: "Delete a retained Maestro managed async task.",
+    parameters: Type.Object({ task_id: Type.String() }),
+    execute: (params, signal) => callMaestro(`/tasks/${encodeURIComponent(params.task_id)}`, { method: "DELETE", signal }),
+  });
+
+  const TasksCleanupParams = Type.Object({
+    statuses: Nullable(Type.Array(Type.String())),
+    tool: OptString(),
+    dry_run: DryRun(),
+  });
+  registerMaestroTool(pi, {
+    name: "maestro_tasks_cleanup",
+    label: "Maestro Tasks Cleanup",
+    description: "Delete retained terminal Maestro task snapshots matching explicit filters.",
+    parameters: TasksCleanupParams,
+    execute: (params, signal) => params.dry_run ? planned("tasks.cleanup", params as MaestroBody) : callMaestro("/tasks/cleanup", { body: params as MaestroBody, signal }),
   });
 
   const DockerRunParams = Type.Object({
