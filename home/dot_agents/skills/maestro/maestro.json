@@ -1,10 +1,16 @@
 {
   "name": "maestro",
-  "description": "Deterministic local execution service for shell commands, LLM inference, embeddings, vector operations, planner-managed memory, file I/O, Docker operations, service introspection, and multi-step pipelines.",
+  "description": "Deterministic local execution service for shell commands, LLM inference, embeddings, reranking, text chunking, vector operations, planner-managed memory, file I/O, artifacts, audit events, managed async tasks, Docker operations, service introspection, and multi-step pipelines.",
   "contract_version": "1.0",
-  "tool_contract_version": "1.2",
+  "tool_contract_version": "1.30",
   "naming": {
     "manifest_to_adapter": "Prefix with maestro_ and replace dots with underscores, e.g. memory.put -> maestro_memory_put."
+  },
+  "auth": {
+    "header": "X-API-Key",
+    "api_key_env": "MAESTRO_API_KEY",
+    "scoped_keys_env": "MAESTRO_API_KEYS",
+    "note": "Read-only service endpoints except /health require API-key auth by default unless the server explicitly exposes them publicly."
   },
   "tools": [
     {
@@ -12,42 +18,66 @@
       "description": "Check Maestro service liveness.",
       "method": "GET",
       "path": "/health",
-      "input_schema": { "type": "object", "properties": {}, "required": [] }
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
     },
     {
       "name": "health_detailed",
-      "description": "Check detailed Maestro health including backend and memory status.",
+      "description": "Check detailed Maestro health including backend, memory, artifact, audit, and task status.",
       "method": "GET",
       "path": "/health/detailed",
-      "input_schema": { "type": "object", "properties": {}, "required": [] }
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
     },
     {
       "name": "capabilities",
-      "description": "List available tools, backends, backend capabilities, feature flags, and supported contract versions.",
+      "description": "List available tools, backends, backend capabilities, feature flags, auth context, and supported contract versions.",
       "method": "GET",
       "path": "/capabilities",
-      "input_schema": { "type": "object", "properties": {}, "required": [] }
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
     },
     {
       "name": "manifest",
-      "description": "Fetch Maestro's machine-readable tool manifest with JSON schemas.",
+      "description": "Fetch Maestro's machine-readable tool manifest with JSON schemas and planner-facing safety metadata.",
       "method": "GET",
       "path": "/manifest",
-      "input_schema": { "type": "object", "properties": {}, "required": [] }
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
     },
     {
       "name": "metrics",
-      "description": "Fetch Maestro runtime counters as JSON.",
+      "description": "Fetch Maestro runtime counters, gauges, and histograms as JSON.",
       "method": "GET",
       "path": "/metrics",
-      "input_schema": { "type": "object", "properties": {}, "required": [] }
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
     },
     {
       "name": "metrics_prometheus",
-      "description": "Fetch Maestro runtime counters in Prometheus/OpenMetrics text format.",
+      "description": "Fetch Maestro runtime metrics in Prometheus/OpenMetrics text format.",
       "method": "GET",
       "path": "/metrics/prometheus",
-      "input_schema": { "type": "object", "properties": {}, "required": [] }
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
     },
     {
       "name": "run",
@@ -55,16 +85,63 @@
       "method": "POST",
       "path": "/run",
       "input_schema": {
-        "type": "object",
         "properties": {
-          "contract_version": { "type": "string" },
-          "command": { "type": "string" },
-          "timeout": { "type": "integer", "minimum": 1, "maximum": 600 },
-          "workdir": { "type": "string", "nullable": true },
-          "callback_url": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean" }
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "command": {
+            "type": "string",
+            "title": "Command",
+            "description": "Shell command to execute"
+          },
+          "timeout": {
+            "type": "integer",
+            "maximum": 600.0,
+            "minimum": 1.0,
+            "title": "Timeout",
+            "description": "Max seconds before the command is killed",
+            "default": 30
+          },
+          "workdir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workdir",
+            "description": "Working directory (defaults to executor root)"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url",
+            "description": "Optional webhook URL to POST results to on completion"
+          }
         },
-        "required": ["contract_version", "command"]
+        "type": "object",
+        "required": [
+          "contract_version",
+          "command"
+        ],
+        "title": "RunRequest",
+        "description": "Execute a shell command or script."
       }
     },
     {
@@ -73,20 +150,99 @@
       "method": "POST",
       "path": "/llm",
       "input_schema": {
-        "type": "object",
         "properties": {
-          "contract_version": { "type": "string" },
-          "model": { "type": "string" },
-          "prompt": { "type": "string" },
-          "system": { "type": "string", "nullable": true },
-          "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
-          "max_tokens": { "type": "integer", "minimum": 1, "maximum": 32768 },
-          "backend": { "type": "string", "nullable": true },
-          "quantization": { "type": "string", "nullable": true },
-          "callback_url": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean" }
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "Model tag, e.g. 'llama3.1:13b'"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt",
+            "description": "Prompt text to send to the model"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System",
+            "description": "Optional system message"
+          },
+          "temperature": {
+            "type": "number",
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Temperature",
+            "default": 0.7
+          },
+          "max_tokens": {
+            "type": "integer",
+            "maximum": 32768.0,
+            "minimum": 1.0,
+            "title": "Max Tokens",
+            "default": 1024
+          },
+          "backend": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backend",
+            "description": "Force a specific backend. If omitted the executor chooses."
+          },
+          "quantization": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantization",
+            "description": "Quantization hint, e.g. 'q4_k_m', 'fp16'. Informational; actual quantization depends on the loaded model."
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url",
+            "description": "Optional webhook URL to POST results to on completion"
+          }
         },
-        "required": ["contract_version", "model", "prompt"]
+        "type": "object",
+        "required": [
+          "contract_version",
+          "model",
+          "prompt"
+        ],
+        "title": "LLMRequest",
+        "description": "Run inference on a local LLM."
       }
     },
     {
@@ -95,15 +251,181 @@
       "method": "POST",
       "path": "/embed",
       "input_schema": {
-        "type": "object",
         "properties": {
-          "contract_version": { "type": "string" },
-          "input": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
-          "model": { "type": "string" },
-          "callback_url": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean" }
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "input": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Input",
+            "description": "Text or list of texts to embed"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "Embedding model tag (must be pulled in Ollama)",
+            "default": "nomic-embed-text"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url",
+            "description": "Optional webhook URL to POST results to on completion"
+          }
         },
-        "required": ["contract_version", "input"]
+        "type": "object",
+        "required": [
+          "contract_version",
+          "input"
+        ],
+        "title": "EmbedRequest",
+        "description": "Generate vector embeddings for one or more texts."
+      }
+    },
+    {
+      "name": "rerank",
+      "description": "Rank candidate documents by deterministic local lexical relevance to a query.",
+      "method": "POST",
+      "path": "/rerank",
+      "input_schema": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Query",
+            "description": "Search or ranking query"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/RerankDocument"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Documents",
+            "description": "Candidate documents to score"
+          },
+          "top_k": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top K",
+            "description": "Maximum number of ranked hits to return"
+          },
+          "algorithm": {
+            "type": "string",
+            "const": "lexical",
+            "title": "Algorithm",
+            "description": "Reranking algorithm to use",
+            "default": "lexical"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract_version",
+          "query",
+          "documents"
+        ],
+        "title": "RerankRequest",
+        "description": "Rank documents by local lexical relevance to a query."
+      }
+    },
+    {
+      "name": "text.chunk",
+      "description": "Split text into deterministic overlapping chunks by characters or words.",
+      "method": "POST",
+      "path": "/text/chunk",
+      "input_schema": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text",
+            "description": "Input text to chunk"
+          },
+          "strategy": {
+            "type": "string",
+            "enum": [
+              "characters",
+              "words"
+            ],
+            "title": "Strategy",
+            "description": "Chunking unit to use",
+            "default": "characters"
+          },
+          "chunk_size": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Chunk Size",
+            "description": "Maximum chunk size in units"
+          },
+          "overlap": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Overlap",
+            "description": "Overlap between chunks in units",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract_version",
+          "text",
+          "chunk_size"
+        ],
+        "title": "TextChunkRequest",
+        "description": "Split text into deterministic overlapping chunks."
       }
     },
     {
@@ -112,15 +434,53 @@
       "method": "POST",
       "path": "/pipeline",
       "input_schema": {
-        "type": "object",
         "properties": {
-          "contract_version": { "type": "string" },
-          "steps": { "type": "array", "items": { "type": "object" } },
-          "stop_on_error": { "type": "boolean" },
-          "callback_url": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean" }
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/PipelineStep"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Steps",
+            "description": "Ordered list of pipeline steps"
+          },
+          "stop_on_error": {
+            "type": "boolean",
+            "title": "Stop On Error",
+            "description": "Halt pipeline on first step failure",
+            "default": true
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url",
+            "description": "Optional webhook URL to POST results to on completion"
+          }
         },
-        "required": ["contract_version", "steps"]
+        "type": "object",
+        "required": [
+          "contract_version",
+          "steps"
+        ],
+        "title": "PipelineRequest",
+        "description": "Execute a multi-step workflow."
       }
     },
     {
@@ -129,16 +489,65 @@
       "method": "POST",
       "path": "/vector/upsert",
       "input_schema": {
-        "type": "object",
         "properties": {
-          "contract_version": { "type": "string" },
-          "collection": { "type": "string" },
-          "points": { "type": "array", "items": { "type": "object" } },
-          "backend": { "type": "string", "nullable": true },
-          "callback_url": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean" }
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "collection": {
+            "type": "string",
+            "title": "Collection",
+            "description": "Target collection name"
+          },
+          "points": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Points",
+            "description": "Points to upsert (id, vector, payload)"
+          },
+          "backend": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backend",
+            "description": "Force a specific vector backend"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url",
+            "description": "Optional webhook URL"
+          }
         },
-        "required": ["contract_version", "collection", "points"]
+        "type": "object",
+        "required": [
+          "contract_version",
+          "collection",
+          "points"
+        ],
+        "title": "VectorUpsertRequest",
+        "description": "Upsert points into a vector collection."
       }
     },
     {
@@ -147,20 +556,90 @@
       "method": "POST",
       "path": "/vector/search",
       "input_schema": {
-        "type": "object",
         "properties": {
-          "contract_version": { "type": "string" },
-          "collection": { "type": "string" },
-          "vector": { "type": "array", "items": { "type": "number" } },
-          "limit": { "type": "integer", "minimum": 1, "maximum": 1000 },
-          "filter": { "type": "object" },
-          "with_payload": { "type": "boolean" },
-          "with_vectors": { "type": "boolean" },
-          "backend": { "type": "string", "nullable": true },
-          "callback_url": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean" }
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "collection": {
+            "type": "string",
+            "title": "Collection",
+            "description": "Target collection name"
+          },
+          "vector": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Vector",
+            "description": "Query vector"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "description": "Max results to return",
+            "default": 10
+          },
+          "filter": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Filter",
+            "description": "Optional filter conditions"
+          },
+          "with_payload": {
+            "type": "boolean",
+            "title": "With Payload",
+            "description": "Include payload in results",
+            "default": true
+          },
+          "with_vectors": {
+            "type": "boolean",
+            "title": "With Vectors",
+            "description": "Include vectors in results",
+            "default": false
+          },
+          "backend": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backend",
+            "description": "Force a specific vector backend"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url",
+            "description": "Optional webhook URL"
+          }
         },
-        "required": ["contract_version", "collection", "vector"]
+        "type": "object",
+        "required": [
+          "contract_version",
+          "collection",
+          "vector"
+        ],
+        "title": "VectorSearchRequest",
+        "description": "Search a vector collection."
       }
     },
     {
@@ -169,16 +648,71 @@
       "method": "POST",
       "path": "/vector/delete",
       "input_schema": {
-        "type": "object",
         "properties": {
-          "contract_version": { "type": "string" },
-          "collection": { "type": "string" },
-          "ids": { "type": "array" },
-          "backend": { "type": "string", "nullable": true },
-          "callback_url": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean" }
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "collection": {
+            "type": "string",
+            "title": "Collection",
+            "description": "Target collection name"
+          },
+          "ids": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Ids",
+            "description": "Point IDs to delete"
+          },
+          "backend": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backend",
+            "description": "Force a specific vector backend"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url",
+            "description": "Optional webhook URL"
+          }
         },
-        "required": ["contract_version", "collection", "ids"]
+        "type": "object",
+        "required": [
+          "contract_version",
+          "collection",
+          "ids"
+        ],
+        "title": "VectorDeleteRequest",
+        "description": "Delete points from a vector collection."
       }
     },
     {
@@ -186,7 +720,16 @@
       "description": "List all collections in the vector backend.",
       "method": "GET",
       "path": "/vector/collections",
-      "input_schema": { "type": "object", "properties": { "backend": { "type": "string", "nullable": true } }, "required": [] }
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "backend": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": []
+      }
     },
     {
       "name": "vector.create_collection",
@@ -194,18 +737,68 @@
       "method": "POST",
       "path": "/vector/collections",
       "input_schema": {
-        "type": "object",
         "properties": {
-          "contract_version": { "type": "string" },
-          "name": { "type": "string" },
-          "vector_size": { "type": "integer", "minimum": 1 },
-          "distance": { "type": "string" },
-          "if_not_exists": { "type": "boolean" },
-          "options": { "type": "object" },
-          "backend": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean" }
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Collection name to create"
+          },
+          "vector_size": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Vector Size",
+            "description": "Dimensionality of vectors"
+          },
+          "distance": {
+            "type": "string",
+            "title": "Distance",
+            "description": "Distance metric: cosine, euclid, dot, manhattan",
+            "default": "cosine"
+          },
+          "if_not_exists": {
+            "type": "boolean",
+            "title": "If Not Exists",
+            "description": "Skip creation if collection already exists",
+            "default": false
+          },
+          "options": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Options",
+            "description": "Advanced backend-specific options"
+          },
+          "backend": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backend",
+            "description": "Force a specific vector backend"
+          }
         },
-        "required": ["contract_version", "name", "vector_size"]
+        "type": "object",
+        "required": [
+          "contract_version",
+          "name",
+          "vector_size"
+        ],
+        "title": "VectorCreateCollectionRequest",
+        "description": "Create a new vector collection."
       }
     },
     {
@@ -213,7 +806,17 @@
       "description": "Delete a vector collection.",
       "method": "DELETE",
       "path": "/vector/collections/{name}",
-      "input_schema": { "type": "object", "properties": { "name": { "type": "string" } }, "required": ["name"] }
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
     },
     {
       "name": "memory.put",
@@ -221,21 +824,107 @@
       "method": "POST",
       "path": "/memory/put",
       "input_schema": {
-        "type": "object",
         "properties": {
-          "contract_version": { "type": "string" },
-          "namespace": { "type": "string" },
-          "session_id": { "type": "string", "nullable": true },
-          "kind": { "type": "string", "enum": ["message", "observation", "decision", "artifact", "summary", "plan", "fact"] },
-          "text": { "type": "string" },
-          "metadata": { "type": "object" },
-          "index_semantic": { "type": "boolean" },
-          "ttl_seconds": { "type": "integer", "minimum": 1, "nullable": true },
-          "id": { "type": "string", "nullable": true },
-          "dedupe_key": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean" }
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "namespace": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Namespace",
+            "description": "Required memory namespace"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id",
+            "description": "Optional session ID"
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Kind",
+            "description": "Memory kind"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text",
+            "description": "Text payload to store"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata",
+            "description": "Structured metadata attached to the memory item"
+          },
+          "index_semantic": {
+            "type": "boolean",
+            "title": "Index Semantic",
+            "description": "Whether to index the memory item in the vector backend",
+            "default": false
+          },
+          "ttl_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ttl Seconds",
+            "description": "Optional time to live in seconds"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id",
+            "description": "Optional caller-supplied memory ID for idempotent writes"
+          },
+          "dedupe_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dedupe Key",
+            "description": "Optional dedupe key unique within a namespace"
+          }
         },
-        "required": ["contract_version", "namespace", "kind", "text"]
+        "type": "object",
+        "required": [
+          "contract_version",
+          "namespace",
+          "kind",
+          "text"
+        ],
+        "title": "MemoryPutRequest",
+        "description": "Store a memory item and optionally index it semantically."
       }
     },
     {
@@ -243,7 +932,41 @@
       "description": "Retrieve a planner-managed memory item by namespace and identifier.",
       "method": "POST",
       "path": "/memory/get",
-      "input_schema": { "type": "object", "properties": { "contract_version": { "type": "string" }, "namespace": { "type": "string" }, "id": { "type": "string" }, "dry_run": { "type": "boolean" } }, "required": ["contract_version", "namespace", "id"] }
+      "input_schema": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "namespace": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Namespace",
+            "description": "Required memory namespace"
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id",
+            "description": "Memory item ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract_version",
+          "namespace",
+          "id"
+        ],
+        "title": "MemoryGetRequest",
+        "description": "Retrieve one memory item by namespace and ID."
+      }
     },
     {
       "name": "memory.search",
@@ -251,20 +974,96 @@
       "method": "POST",
       "path": "/memory/search",
       "input_schema": {
-        "type": "object",
         "properties": {
-          "contract_version": { "type": "string" },
-          "namespace": { "type": "string" },
-          "session_id": { "type": "string", "nullable": true },
-          "query": { "type": "string", "nullable": true },
-          "limit": { "type": "integer", "minimum": 1, "maximum": 100 },
-          "kind": { "type": "string", "nullable": true },
-          "tags": { "type": "array", "items": { "type": "string" } },
-          "semantic": { "type": "boolean" },
-          "include_expired": { "type": "boolean" },
-          "dry_run": { "type": "boolean" }
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "namespace": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Namespace",
+            "description": "Required memory namespace"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id",
+            "description": "Optional session ID"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query",
+            "description": "Optional query text"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "description": "Max results to return",
+            "default": 10
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind",
+            "description": "Optional kind filter"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "description": "Optional tag filters"
+          },
+          "semantic": {
+            "type": "boolean",
+            "title": "Semantic",
+            "description": "When true, perform semantic search using embeddings + vector backend",
+            "default": false
+          },
+          "include_expired": {
+            "type": "boolean",
+            "title": "Include Expired",
+            "description": "When true, include expired items in exact-mode results",
+            "default": false
+          }
         },
-        "required": ["contract_version", "namespace"]
+        "type": "object",
+        "required": [
+          "contract_version",
+          "namespace"
+        ],
+        "title": "MemorySearchRequest",
+        "description": "Search memory items by exact filters and/or semantic similarity."
       }
     },
     {
@@ -273,18 +1072,78 @@
       "method": "POST",
       "path": "/memory/list",
       "input_schema": {
-        "type": "object",
         "properties": {
-          "contract_version": { "type": "string" },
-          "namespace": { "type": "string" },
-          "session_id": { "type": "string", "nullable": true },
-          "kind": { "type": "string", "nullable": true },
-          "tags": { "type": "array", "items": { "type": "string" } },
-          "include_expired": { "type": "boolean" },
-          "limit": { "type": "integer", "minimum": 1, "maximum": 100 },
-          "dry_run": { "type": "boolean" }
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "namespace": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Namespace",
+            "description": "Required memory namespace"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id",
+            "description": "Optional session ID"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind",
+            "description": "Optional kind filter"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "description": "Optional tag filters"
+          },
+          "include_expired": {
+            "type": "boolean",
+            "title": "Include Expired",
+            "description": "When true, include expired items in list results",
+            "default": false
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "description": "Max results to return",
+            "default": 10
+          }
         },
-        "required": ["contract_version", "namespace"]
+        "type": "object",
+        "required": [
+          "contract_version",
+          "namespace"
+        ],
+        "title": "MemoryListRequest",
+        "description": "List memory items by exact filters without semantic retrieval."
       }
     },
     {
@@ -292,21 +1151,358 @@
       "description": "Delete a planner-managed memory item and remove its semantic index entry.",
       "method": "POST",
       "path": "/memory/delete",
-      "input_schema": { "type": "object", "properties": { "contract_version": { "type": "string" }, "namespace": { "type": "string" }, "id": { "type": "string" }, "dry_run": { "type": "boolean" } }, "required": ["contract_version", "namespace", "id"] }
+      "input_schema": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "namespace": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Namespace",
+            "description": "Required memory namespace"
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id",
+            "description": "Memory item ID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract_version",
+          "namespace",
+          "id"
+        ],
+        "title": "MemoryDeleteRequest",
+        "description": "Delete one memory item by namespace and ID."
+      }
     },
     {
       "name": "file_read",
       "description": "Read a file from the allowed base directory.",
       "method": "POST",
       "path": "/file/read",
-      "input_schema": { "type": "object", "properties": { "contract_version": { "type": "string" }, "path": { "type": "string" }, "dry_run": { "type": "boolean" } }, "required": ["contract_version", "path"] }
+      "input_schema": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "Relative path within MAESTRO_FILE_BASE_DIR"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract_version",
+          "path"
+        ],
+        "title": "FileReadRequest",
+        "description": "Read a file from the allowed base directory."
+      }
     },
     {
       "name": "file_write",
       "description": "Write content to a file in the allowed base directory.",
       "method": "POST",
       "path": "/file/write",
-      "input_schema": { "type": "object", "properties": { "contract_version": { "type": "string" }, "path": { "type": "string" }, "content": { "type": "string" }, "mode": { "type": "string", "enum": ["overwrite", "append"] }, "dry_run": { "type": "boolean" } }, "required": ["contract_version", "path", "content"] }
+      "input_schema": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "Relative path within MAESTRO_FILE_BASE_DIR"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "Text content to write"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "overwrite",
+              "append"
+            ],
+            "title": "Mode",
+            "description": "Write mode",
+            "default": "overwrite"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract_version",
+          "path",
+          "content"
+        ],
+        "title": "FileWriteRequest",
+        "description": "Write content to a file in the allowed base directory."
+      }
+    },
+    {
+      "name": "artifact.put",
+      "description": "Store a text artifact in the local artifact store.",
+      "method": "POST",
+      "path": "/artifacts/put",
+      "input_schema": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "Artifact text content"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id",
+            "description": "Optional caller-supplied ID"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename",
+            "description": "Optional display filename"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type",
+            "description": "Artifact MIME type",
+            "default": "text/plain"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata",
+            "description": "Non-sensitive artifact metadata"
+          },
+          "ttl_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ttl Seconds",
+            "description": "Optional lifetime in seconds; converted to expires_at on write"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At",
+            "description": "Optional expiration timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract_version",
+          "content"
+        ],
+        "title": "ArtifactPutRequest",
+        "description": "Store a text artifact under the configured file base directory."
+      }
+    },
+    {
+      "name": "artifact.list",
+      "description": "List text artifact metadata without content.",
+      "method": "GET",
+      "path": "/artifacts",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "include_expired": {
+            "type": "boolean"
+          },
+          "filename": {
+            "type": "string",
+            "nullable": true
+          },
+          "content_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "metadata_key": {
+            "type": "string",
+            "nullable": true
+          },
+          "metadata_value": {
+            "type": "string",
+            "nullable": true
+          },
+          "limit": {
+            "type": "integer",
+            "nullable": true
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "artifact.get",
+      "description": "Retrieve artifact metadata plus stored content.",
+      "method": "GET",
+      "path": "/artifacts/{artifact_id}",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "artifact_id": {
+            "type": "string"
+          },
+          "include_expired": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "artifact_id"
+        ]
+      }
+    },
+    {
+      "name": "artifact.delete",
+      "description": "Delete a text artifact.",
+      "method": "DELETE",
+      "path": "/artifacts/{artifact_id}",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "artifact_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifact_id"
+        ]
+      }
+    },
+    {
+      "name": "artifact.cleanup_expired",
+      "description": "Delete expired artifacts from the local artifact store.",
+      "method": "POST",
+      "path": "/artifacts/cleanup-expired",
+      "input_schema": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract_version"
+        ],
+        "title": "ArtifactCleanupExpiredRequest",
+        "description": "Delete expired artifacts from the local artifact store."
+      }
+    },
+    {
+      "name": "audit.list",
+      "description": "List retained executor audit events newest-first.",
+      "method": "GET",
+      "path": "/audit",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "nullable": true
+          },
+          "destructive": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "principal": {
+            "type": "string",
+            "nullable": true
+          },
+          "key_id": {
+            "type": "string",
+            "nullable": true
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": []
+      }
     },
     {
       "name": "docker_run",
@@ -314,19 +1510,89 @@
       "method": "POST",
       "path": "/docker/run",
       "input_schema": {
-        "type": "object",
         "properties": {
-          "contract_version": { "type": "string" },
-          "image": { "type": "string" },
-          "command": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }, { "type": "null" }] },
-          "env": { "type": "object", "additionalProperties": { "type": "string" } },
-          "volumes": { "type": "object", "additionalProperties": { "type": "string" } },
-          "detach": { "type": "boolean" },
-          "remove": { "type": "boolean" },
-          "name": { "type": "string", "nullable": true },
-          "dry_run": { "type": "boolean" }
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "image": {
+            "type": "string",
+            "title": "Image",
+            "description": "Docker image to run, e.g. 'alpine:latest'"
+          },
+          "command": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Command",
+            "description": "Command to run inside the container"
+          },
+          "env": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Env",
+            "description": "Environment variables"
+          },
+          "volumes": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Volumes",
+            "description": "Volume mounts as {host_path: container_path}"
+          },
+          "detach": {
+            "type": "boolean",
+            "title": "Detach",
+            "description": "Run container in background",
+            "default": true
+          },
+          "remove": {
+            "type": "boolean",
+            "title": "Remove",
+            "description": "Auto-remove container on exit",
+            "default": false
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "Optional container name"
+          }
         },
-        "required": ["contract_version", "image"]
+        "type": "object",
+        "required": [
+          "contract_version",
+          "image"
+        ],
+        "title": "DockerRunRequest",
+        "description": "Run a Docker container."
       }
     },
     {
@@ -334,35 +1600,331 @@
       "description": "Inspect a running Docker container.",
       "method": "GET",
       "path": "/docker/{container_id}/status",
-      "input_schema": { "type": "object", "properties": { "container_id": { "type": "string" } }, "required": ["container_id"] }
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "container_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "container_id"
+        ]
+      }
     },
     {
       "name": "docker_logs",
       "description": "Fetch logs from a Docker container.",
       "method": "GET",
       "path": "/docker/{container_id}/logs",
-      "input_schema": { "type": "object", "properties": { "container_id": { "type": "string" }, "tail": { "type": "integer", "minimum": 1, "maximum": 10000 } }, "required": ["container_id"] }
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "container_id": {
+            "type": "string"
+          },
+          "tail": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "container_id"
+        ]
+      }
     },
     {
       "name": "docker_exec",
       "description": "Execute a command in a running Docker container.",
       "method": "POST",
       "path": "/docker/{container_id}/exec",
-      "input_schema": { "type": "object", "properties": { "contract_version": { "type": "string" }, "container_id": { "type": "string" }, "command": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] }, "dry_run": { "type": "boolean" } }, "required": ["contract_version", "container_id", "command"] }
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "contract_version": {
+            "type": "string"
+          },
+          "container_id": {
+            "type": "string"
+          },
+          "command": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "dry_run": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "contract_version",
+          "container_id",
+          "command"
+        ]
+      }
     },
     {
       "name": "docker_stop",
       "description": "Stop a running Docker container.",
       "method": "POST",
       "path": "/docker/{container_id}/stop",
-      "input_schema": { "type": "object", "properties": { "container_id": { "type": "string" } }, "required": ["container_id"] }
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "container_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "container_id"
+        ]
+      }
     },
     {
       "name": "docker_remove",
       "description": "Remove a Docker container.",
       "method": "DELETE",
       "path": "/docker/{container_id}",
-      "input_schema": { "type": "object", "properties": { "container_id": { "type": "string" } }, "required": ["container_id"] }
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "container_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "container_id"
+        ]
+      }
+    },
+    {
+      "name": "tasks.submit",
+      "description": "Submit a supported tool request for asynchronous execution.",
+      "method": "POST",
+      "path": "/tasks",
+      "input_schema": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "tool": {
+            "type": "string",
+            "enum": [
+              "run",
+              "llm",
+              "embed",
+              "rerank",
+              "text.chunk",
+              "artifact.put",
+              "artifact.get",
+              "artifact.list",
+              "artifact.delete",
+              "pipeline"
+            ],
+            "title": "Tool",
+            "description": "Tool action to execute asynchronously"
+          },
+          "params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Params",
+            "description": "Tool-specific request parameters. contract_version is inherited if omitted."
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract_version",
+          "tool"
+        ],
+        "title": "AsyncTaskRequest",
+        "description": "Submit a tool request for asynchronous execution."
+      }
+    },
+    {
+      "name": "tasks.list",
+      "description": "List retained managed tasks.",
+      "method": "GET",
+      "path": "/tasks",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "tool": {
+            "type": "string",
+            "nullable": true
+          },
+          "limit": {
+            "type": "integer",
+            "nullable": true
+          },
+          "offset": {
+            "type": "integer"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "tasks.get",
+      "description": "Return one retained managed task snapshot.",
+      "method": "GET",
+      "path": "/tasks/{task_id}",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id"
+        ]
+      }
+    },
+    {
+      "name": "tasks.logs",
+      "description": "Return lifecycle log events for a managed task.",
+      "method": "GET",
+      "path": "/tasks/{task_id}/logs",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id"
+        ]
+      }
+    },
+    {
+      "name": "tasks.cancel",
+      "description": "Request cancellation of a managed task.",
+      "method": "POST",
+      "path": "/tasks/{task_id}/cancel",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id"
+        ]
+      }
+    },
+    {
+      "name": "tasks.retry",
+      "description": "Submit a new task using the original request payload.",
+      "method": "POST",
+      "path": "/tasks/{task_id}/retry",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id"
+        ]
+      }
+    },
+    {
+      "name": "tasks.delete",
+      "description": "Remove a retained task from the task registry.",
+      "method": "DELETE",
+      "path": "/tasks/{task_id}",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id"
+        ]
+      }
+    },
+    {
+      "name": "tasks.cleanup",
+      "description": "Delete retained terminal task snapshots matching explicit filters.",
+      "method": "POST",
+      "path": "/tasks/cleanup",
+      "input_schema": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "title": "Contract Version",
+            "description": "API contract version. Currently supported: 1.0"
+          },
+          "dry_run": {
+            "type": "boolean",
+            "title": "Dry Run",
+            "description": "When true, return the execution plan without performing any side effects.",
+            "default": false
+          },
+          "statuses": {
+            "items": {
+              "$ref": "#/components/schemas/TaskStatus"
+            },
+            "type": "array",
+            "title": "Statuses",
+            "description": "Terminal task statuses eligible for cleanup"
+          },
+          "tool": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "run",
+                  "llm",
+                  "embed",
+                  "rerank",
+                  "text.chunk",
+                  "artifact.put",
+                  "artifact.get",
+                  "artifact.list",
+                  "artifact.delete",
+                  "pipeline"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool",
+            "description": "Optional tool filter for cleanup"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract_version"
+        ],
+        "title": "TaskCleanupRequest",
+        "description": "Cleanup retained terminal managed tasks."
+      }
     }
   ]
 }

@@ -7,664 +7,176 @@ Use this skill when delegating work to the local Maestro execution server.
 
 ## Tool Registration Contract
 
-See [CONTRACT.md](CONTRACT.md) for the authoritative interface contract that all Maestro tools
-must follow. See [README.md](README.md) for architecture overview and migration rules.
+See [CONTRACT.md](CONTRACT.md) for the authoritative interface contract that all Maestro tools must follow. See [README.md](README.md) for architecture overview and migration rules.
 
 ## Base URL and Auth
 
-```
-Base URL:  http://localhost:8100
-Auth:      X-API-Key: <MAESTRO_API_KEY>
-```
-
-**Every request must include this header — no exceptions:**
-
-```
-X-API-Key: <MAESTRO_API_KEY>
+```text
+Base URL: http://localhost:8100
+Auth:     X-API-Key: <MAESTRO_API_KEY>
 ```
 
-Maestro does NOT use `Authorization: Bearer`. It does NOT use `/v1/...` OpenAI-compatible paths for `/llm` or `/embed`. Use the paths and auth scheme documented here exactly.
+Adapters read `MAESTRO_BASE_URL`, `MAESTRO_API_KEY`, and `MAESTRO_CLIENT_TIMEOUT_MS` lazily at invocation time.
 
----
+`GET /health` is public. Detailed health, metrics, capabilities, manifest, and tool endpoints require API-key auth by default unless the server explicitly exposes selected read-only endpoints publicly. Scoped keys are configured server-side with `MAESTRO_API_KEYS`; `/capabilities` is scope-aware and may omit tools the current key cannot use.
+
+Maestro does not use `Authorization: Bearer`. Use `X-API-Key` when an API key is set.
 
 ## Contract Versioning
 
-All POST requests **require** a `contract_version` field in the JSON body:
+All versioned POST requests include this field in the JSON body:
+
+```json
+{ "contract_version": "1.0" }
+```
+
+GET and DELETE endpoints do not require `contract_version` unless a future route explicitly accepts a body.
+
+## Response Envelopes
+
+Most tool endpoints return:
 
 ```json
 {
-  "contract_version": "1.0",
-  "command": "echo hello"
+  "task_id": "<id>",
+  "status": "completed",
+  "result": {},
+  "error": null,
+  "execution_id": "<trace-id>"
 }
 ```
 
-Requests without `contract_version` are rejected with `422 Unprocessable Entity`. Requests with an unsupported version get a clear error listing supported versions.
-
-**Current version:** `"1.0"`
-
-GET endpoints (`/health`, `/metrics`, `/capabilities`, `/manifest`) do not require `contract_version`.
-
----
-
-## Server-Side Feature Flags
-
-| Env var                         | Default    | Effect                                                              |
-| ------------------------------- | ---------- | ------------------------------------------------------------------- |
-| `MAESTRO_ALLOW_SHELL`           | `false`    | Enables `/run` — **disabled by default for security**               |
-| `MAESTRO_ALLOW_DOCKER`          | `false`    | Enables `/docker/*` — **disabled by default for security**          |
-| `MAESTRO_AUTO_PULL_MODELS`      | `false`    | Pulls missing Ollama models on first use                            |
-| `MAESTRO_PULL_TIMEOUT_SECONDS`  | `600`      | Seconds before a pull is abandoned                                  |
-| `MAESTRO_INFER_TIMEOUT_SECONDS` | `300`      | Seconds before an LLM generate call times out (0 = no timeout)      |
-| `MAESTRO_FILE_MAX_BYTES`        | `10485760` | Max bytes for a single `/file/write` (0 = unlimited)                |
-| `MAESTRO_CORS_ORIGINS`          | `*`        | Comma-separated allowed CORS origins                                |
-| `MAESTRO_MAX_EXECUTION_SECONDS` | `0`        | Global cap on task execution time (0 = no cap, use request timeout) |
-| `MAESTRO_MAX_CONCURRENT_TASKS`  | `0`        | Max concurrent tasks across all endpoints (0 = unlimited)           |
-
-> **Security Note:** Shell and Docker execution are disabled by default. Set `MAESTRO_ALLOW_SHELL=true`
-> and/or `MAESTRO_ALLOW_DOCKER=true` only in trusted environments.
-
----
-
-## Response Envelope
-
-Every endpoint returns:
-
-```json
-{
-  "task_id": "<12-char hex>",
-  "status": "completed" | "failed" | "pending" | "running" | "planned",
-  "result": { ... },
-  "error": null | "<message>",
-  "execution_id": "<32-char hex>"
-}
-```
-
-**HTTP 200 does NOT mean success.** Always check `status` in the response body. A successful HTTP
-200 response may still have `"status": "failed"` if the task itself failed. Treat any response
-where `status != "completed"` as an error.
-
-The `"planned"` status is returned when `dry_run: true` — no side effects were executed.
-
-Every response also includes an `X-Execution-ID` header for distributed tracing.
-
----
+HTTP 200 does not guarantee task success. Check `status`; treat `"failed"` as a tool failure. Some introspection/list endpoints return plain JSON shapes instead of the standard task envelope; adapters surface those unchanged.
 
 ## Dry-Run Mode
 
-All POST execution endpoints support `"dry_run": true`. When set, Maestro returns the execution
-plan without performing any side effects:
+Dry-run-capable POST endpoints accept:
 
 ```json
-{
-  "contract_version": "1.0",
-  "command": "rm -rf /tmp/data",
-  "dry_run": true
-}
+{ "dry_run": true }
 ```
 
-Response has `"status": "planned"` and `result` contains the execution parameters that would
-have been used. Use this to validate plans before executing them.
-
----
+The response status is `"planned"` and no side effects are performed. Adapters may also synthesize a local planned envelope before calling the server.
 
 ## Endpoints Quick Reference
 
-| Method | Path                       | Purpose                                         | Auth |
-| ------ | -------------------------- | ----------------------------------------------- | ---- |
-| GET    | /health                    | Liveness probe                                  | No   |
-| GET    | /health/detailed           | Backend connectivity status                     | No   |
-| GET    | /metrics                   | Runtime counters (JSON)                         | No   |
-| GET    | /metrics/prometheus        | Prometheus / OpenMetrics format                 | No   |
-| GET    | /capabilities              | Available tools, backends, features             | No   |
-| GET    | /manifest                  | Machine-readable tool definitions (JSON Schema) | No   |
-| POST   | /run                       | Execute shell command                           | Yes  |
-| POST   | /run?stream=true           | Execute with SSE streaming                      | Yes  |
-| POST   | /llm                       | Local LLM inference                             | Yes  |
-| POST   | /embed                     | Vector embeddings                               | Yes  |
-| POST   | /vector/upsert             | Upsert points into a vector collection          | Yes  |
-| POST   | /vector/search             | Search a vector collection                      | Yes  |
-| POST   | /vector/delete             | Delete points from a vector collection          | Yes  |
-| GET    | /vector/collections        | List all collections                            | Yes  |
-| POST   | /vector/collections        | Create a collection                             | Yes  |
-| DELETE | /vector/collections/{name} | Delete a collection                             | Yes  |
-| POST   | /file/read                 | Read file from base dir                         | Yes  |
-| POST   | /file/write                | Write file to base dir                          | Yes  |
-| POST   | /pipeline                  | Multi-step workflow                             | Yes  |
-| POST   | /docker/run                | Run a container                                 | Yes  |
-| GET    | /docker/{id}/status        | Container status                                | Yes  |
-| GET    | /docker/{id}/logs?tail=N   | Container logs                                  | Yes  |
-| POST   | /docker/{id}/exec          | Exec command in container                       | Yes  |
-| POST   | /docker/{id}/stop          | Stop container                                  | Yes  |
-| DELETE | /docker/{id}               | Remove container                                | Yes  |
+| Method | Path | Tool |
+| --- | --- | --- |
+| GET | `/health` | `maestro_health` |
+| GET | `/health/detailed` | `maestro_health_detailed` |
+| GET | `/capabilities` | `maestro_capabilities` |
+| GET | `/manifest` | `maestro_manifest` |
+| GET | `/metrics` | `maestro_metrics` |
+| GET | `/metrics/prometheus` | `maestro_metrics_prometheus` |
+| POST | `/run` | `maestro_run` |
+| POST | `/llm` | `maestro_llm` |
+| POST | `/embed` | `maestro_embed` |
+| POST | `/rerank` | `maestro_rerank` |
+| POST | `/text/chunk` | `maestro_text_chunk` |
+| POST | `/pipeline` | `maestro_pipeline` |
+| POST | `/vector/upsert` | `maestro_vector_upsert` |
+| POST | `/vector/search` | `maestro_vector_search` |
+| POST | `/vector/delete` | `maestro_vector_delete` |
+| GET | `/vector/collections` | `maestro_vector_list_collections` |
+| POST | `/vector/collections` | `maestro_vector_create_collection` |
+| DELETE | `/vector/collections/{name}` | `maestro_vector_delete_collection` |
+| POST | `/memory/put` | `maestro_memory_put` |
+| POST | `/memory/get` | `maestro_memory_get` |
+| POST | `/memory/search` | `maestro_memory_search` |
+| POST | `/memory/list` | `maestro_memory_list` |
+| POST | `/memory/delete` | `maestro_memory_delete` |
+| POST | `/file/read` | `maestro_file_read` |
+| POST | `/file/write` | `maestro_file_write` |
+| POST | `/artifacts/put` | `maestro_artifact_put` |
+| GET | `/artifacts` | `maestro_artifact_list` |
+| GET | `/artifacts/{artifact_id}` | `maestro_artifact_get` |
+| DELETE | `/artifacts/{artifact_id}` | `maestro_artifact_delete` |
+| POST | `/artifacts/cleanup-expired` | `maestro_artifact_cleanup_expired` |
+| GET | `/audit` | `maestro_audit_list` |
+| POST | `/docker/run` | `maestro_docker_run` |
+| GET | `/docker/{id}/status` | `maestro_docker_status` |
+| GET | `/docker/{id}/logs` | `maestro_docker_logs` |
+| POST | `/docker/{id}/exec` | `maestro_docker_exec` |
+| POST | `/docker/{id}/stop` | `maestro_docker_stop` |
+| DELETE | `/docker/{id}` | `maestro_docker_remove` |
+| POST | `/tasks` | `maestro_tasks_submit` |
+| GET | `/tasks` | `maestro_tasks_list` |
+| GET | `/tasks/{task_id}` | `maestro_tasks_get` |
+| GET | `/tasks/{task_id}/logs` | `maestro_tasks_logs` |
+| POST | `/tasks/{task_id}/cancel` | `maestro_tasks_cancel` |
+| POST | `/tasks/{task_id}/retry` | `maestro_tasks_retry` |
+| DELETE | `/tasks/{task_id}` | `maestro_tasks_delete` |
+| POST | `/tasks/cleanup` | `maestro_tasks_cleanup` |
 
----
+## Common Payloads
 
-## Endpoint Details
-
-### POST /run
-
-```json
-{
-  "contract_version": "1.0",
-  "command": "ls -la /app",
-  "timeout": 30,
-  "workdir": null,
-  "callback_url": null
-}
-```
-
-Result: `{ "stdout": "...", "stderr": "...", "returncode": 0 }`
-
-Requires `MAESTRO_ALLOW_SHELL=true` on the server.
-
-**Streaming:** Pass `?stream=true` query parameter to receive Server-Sent Events with stdout/stderr
-lines as they are produced. The stream ends with `data: [DONE]`.
-
-```
-data: {"event": "output", "channel": "stdout", "data": "line 1\n"}
-data: {"event": "output", "channel": "stderr", "data": "warning\n"}
-data: {"event": "result", "task_id": "abc123", "status": "completed", "returncode": 0}
-data: [DONE]
-```
-
----
-
-### POST /llm
+### Rerank
 
 ```json
 {
-  "contract_version": "1.0",
-  "model": "llama3.1:8b",
-  "prompt": "...",
-  "system": null,
-  "temperature": 0.7,
-  "max_tokens": 1024,
-  "backend": null,
-  "quantization": null
-}
-```
-
-Result: `{ "text": "...", "model": "llama3.1:8b", "backend": "ollama-llm" }`
-
-`system` is an optional instruction string prepended before the user prompt. Use it to constrain
-output format or persona — e.g. `"You are a concise assistant. Respond in one sentence."` or
-`"Return only valid JSON."`. Leave `null` if no special instruction is needed.
-
-Available models (local defaults): `maestro-assistant:latest`, `llama3.1:8b`
-
-> **Backend note:** Only Ollama-hosted models are currently available. OpenAI/Anthropic models
-> (e.g. `gpt-4o-mini`) are not supported — use Ollama model names only.
-
-To target a specific backend, set `backend` to the backend ID (e.g. `"ollama-llm"`, `"openrouter"`).
-When omitted, Maestro selects the best available LLM backend automatically.
-
----
-
-### POST /embed
-
-```json
-{
-  "contract_version": "1.0",
-  "input": "text to embed",
-  "model": "nomic-embed-text"
-}
-```
-
-`input` can be a string or a list of strings.
-
-> **Known limitation:** Batch input (array of strings) is currently treated as a single
-> concatenated string — each item returns duplicated embeddings rather than independent
-> vectors. For reliable results, embed one string at a time.
-
-Result: `{ "embeddings": [[...]], "model": "nomic-embed-text", "backend": "ollama-embed" }`
-
-Available embedding model: `nomic-embed-text` (768-dim). Maestro auto-selects the best
-available embed backend. There is no `backend` field on embed requests.
-
----
-
-### POST /vector/upsert
-
-```json
-{
-  "contract_version": "1.0",
-  "collection": "my_collection",
-  "points": [
-    { "id": 1, "vector": [0.1, 0.2, ...], "payload": { "text": "hello" } }
+  "query": "local dev observability metrics",
+  "documents": [
+    { "id": "a", "text": "docker startup logs" },
+    { "id": "b", "text": "prometheus metrics" }
   ],
-  "backend": null
+  "top_k": 1
 }
 ```
 
-> **Point IDs must be integers.** Qdrant uses integer point IDs by default — string IDs
-> return HTTP 400. Use sequential integers (1, 2, 3...) for point IDs.
->
-> **Payload size:** Large vectors (e.g. 768-dim floats) in a single upsert call may exceed
-> the host runtime's tool call payload limit, causing the call to abort. For high-dimensional vectors,
-> use a **pipeline** to embed + upsert server-side (see embed→upsert example in the Pipeline
-> section). This avoids the LLM having to generate hundreds of float values in tool call args.
-
-Result: `{ "operation": "upsert", "collection": "my_collection", "backend": "qdrant" }`
-
----
-
-### POST /vector/search
+### Text chunk
 
 ```json
 {
-  "contract_version": "1.0",
-  "collection": "my_collection",
-  "vector": [0.1, 0.2, ...],
-  "limit": 10,
-  "filter": {},
-  "with_payload": true,
-  "with_vectors": false,
-  "backend": null
+  "text": "alpha beta gamma delta",
+  "strategy": "words",
+  "chunk_size": 3,
+  "overlap": 1
 }
 ```
 
-Result: `{ "operation": "search", "collection": "my_collection", "backend": "qdrant" }`
-
-Also accessible via `/vector/query` (hidden alias for `/vector/search`).
-
----
-
-### POST /vector/delete
+### Artifact put
 
 ```json
 {
-  "contract_version": "1.0",
-  "collection": "my_collection",
-  "ids": [1, 2, 3],
-  "backend": null
+  "content": "Generated report body",
+  "filename": "report.txt",
+  "content_type": "text/plain",
+  "metadata": { "kind": "report" },
+  "ttl_seconds": 3600
 }
 ```
 
-> **IDs must be integers** (matching the upsert format). String IDs return HTTP 400.
-> Deleting non-existent IDs is a no-op (succeeds silently).
-
-Result: `{ "operation": "delete", "collection": "my_collection", "backend": "qdrant" }`
-
----
-
-### GET /vector/collections
-
-No request body. Optional query param `?backend=qdrant` to target a specific backend.
-
-Result: `{ "operation": "list_collections", "collections": ["docs", "images"], "backend": "qdrant" }`
-
----
-
-### POST /vector/collections
+### Managed async task
 
 ```json
 {
-  "contract_version": "1.0",
-  "name": "my_collection",
-  "vector_size": 768,
-  "distance": "cosine",
-  "if_not_exists": false,
-  "options": {},
-  "backend": null
+  "tool": "rerank",
+  "params": {
+    "query": "metrics",
+    "documents": [{ "text": "prometheus metrics" }]
+  }
 }
 ```
 
-Result: `{ "operation": "create_collection", "name": "my_collection", "created": true, "backend": "qdrant" }`
+### Pipeline
 
-`distance` options: `cosine`, `euclid`, `dot`, `manhattan`. Default: `cosine`.
-`if_not_exists`: when `true`, returns `"created": false` if collection already exists instead of erroring.
+Pipeline steps use action names such as `run`, `llm`, `embed`, `rerank`, `text.chunk`, `artifact.put`, `vector.search`, `memory.search`, `file_read`, and `file_write`. Step params can reference prior outputs:
 
----
-
-### DELETE /vector/collections/{name}
-
-No request body. Collection name is in the URL path.
-
-Result: `{ "operation": "delete_collection", "name": "my_collection", "backend": "qdrant" }`
-
----
-
-### GET /health/detailed
-
-No auth required. Returns backend connectivity and model registry state.
-
-```json
-{
-  "status": "ok" | "degraded",
-  "service": "maestro-executor",
-  "version": "0.1.0",
-  "backends": {
-    "ollama-llm":   { "status": "connected", "models": 3 },
-    "ollama-embed": { "status": "connected" },
-    "openrouter":   { "status": "connected" },
-    "qdrant":       { "status": "connected" }
-  },
-  "models": {
-    "registered": 3,
-    "list": ["llama3.1:8b", "nomic-embed-text", ...]
-  },
-  "config_generation": 1,
-  "last_reload_error": null
-}
+```text
+{{steps[N].result.key}}
 ```
 
-`status` is `"degraded"` if any required backend is unreachable. Optional backends (like
-`openrouter` or `qdrant`) show as `"disconnected (optional)"` without affecting overall status.
-`config_generation` increments on each backends.yaml hot-reload; `last_reload_error` is
-non-null when the most recent reload failed.
+Docker operations are standalone REST endpoints and are not pipeline actions.
 
----
+## Server-Side Feature Flags
 
-### GET /capabilities
+| Env var | Effect |
+| --- | --- |
+| `MAESTRO_ALLOW_SHELL` | Enables `/run` |
+| `MAESTRO_ALLOW_DOCKER` | Enables `/docker/*` |
+| `MAESTRO_ALLOW_MEMORY` | Enables `/memory/*` and memory pipeline actions |
+| `MAESTRO_FILE_BASE_DIR` | Constrains file and artifact storage |
+| `MAESTRO_PUBLIC_METRICS` | Allows public metrics when enabled |
+| `MAESTRO_PUBLIC_DETAILED_HEALTH` | Allows public detailed health when enabled |
 
-No auth required. Returns available tools, backends, and feature flags.
-
-```json
-{
-  "tools": [
-    "run",
-    "llm",
-    "embed",
-    "vector.upsert",
-    "vector.search",
-    "vector.delete",
-    "pipeline",
-    "file_read",
-    "file_write",
-    "docker_run",
-    "docker_exec"
-  ],
-  "backends": ["ollama-llm", "ollama-embed", "openrouter", "qdrant"],
-  "backend_capabilities": {
-    "ollama-llm": ["discovery", "generate", "health", "stream"],
-    "ollama-embed": ["embed", "health"],
-    "openrouter": ["discovery", "generate", "health", "stream"],
-    "qdrant": ["health", "vector.delete", "vector.search", "vector.upsert"]
-  },
-  "backend_contracts": {
-    "ollama-llm": { "contract_type": "llm", "profile": "default", "adapter": "ollama" },
-    "ollama-embed": { "contract_type": "embed", "profile": "default", "adapter": "ollama" },
-    "openrouter": { "contract_type": "llm", "profile": "cloud", "adapter": "openai_compatible" },
-    "qdrant": { "contract_type": "vector", "profile": "default", "adapter": "qdrant" }
-  },
-  "features": {
-    "shell_enabled": true,
-    "docker_enabled": false,
-    "auto_pull_models": false,
-    "dry_run": true
-  },
-  "contract_versions": ["1.0"]
-}
-```
-
-Use this to discover what Maestro supports before constructing a plan.
-`backend_contracts` shows each backend's contract type (llm/embed/vector), profile, and adapter.
-
----
-
-### GET /manifest
-
-No auth required. Machine-readable tool definitions with JSON Schema inputs.
-
-```json
-{
-  "version": "0.1.0",
-  "contract_version": "1.0",
-  "tools": [
-    {
-      "name": "run",
-      "description": "Execute a shell command or script and return stdout/stderr.",
-      "input_schema": { "properties": { "command": { "type": "string" }, "...": "..." } }
-    }
-  ]
-}
-```
-
-Planners and tool registries can consume this to auto-discover tools and their input schemas.
-
----
-
-### POST /file/read
-
-```json
-{
-  "contract_version": "1.0",
-  "path": "relative/path/to/file.txt"
-}
-```
-
-Paths are relative to `MAESTRO_FILE_BASE_DIR`. Path traversal is rejected.
-
-Result: `{ "path": "...", "content": "..." }`
-
----
-
-### POST /file/write
-
-```json
-{
-  "contract_version": "1.0",
-  "path": "output/result.txt",
-  "content": "...",
-  "mode": "overwrite"
-}
-```
-
-`mode`: `"overwrite"` (default) or `"append"`. Parent dirs created automatically.
-
-Result: `{ "path": "...", "bytes_written": N }`
-
----
-
-### POST /pipeline
-
-Run multiple actions in sequence with optional output chaining between steps.
-
-**When to use pipeline vs standalone:**
-
-- Use `/pipeline` when you need 2+ steps where one step's output feeds the next (shell → LLM, LLM → file, etc.).
-- Use standalone endpoints (`/run`, `/llm`, etc.) for single, independent operations.
-
-```json
-{
-  "contract_version": "1.0",
-  "steps": [
-    { "action": "<action>", "params": { ... } },
-    { "action": "<action>", "params": { ... } }
-  ],
-  "stop_on_error": true,
-  "callback_url": null
-}
-```
-
-**Available actions:** `run`, `llm`, `embed`, `vector.upsert`, `vector.search`, `vector.delete`, `file_read`, `file_write`
-
-Each step's `params` object accepts the same fields as its standalone endpoint, **including
-`contract_version: "1.0"`** which is required in each step's params (not just the top-level body).
-
-**Step format:**
-```json
-{ "action": "run", "params": { "contract_version": "1.0", "command": "echo hello" } }
-```
-
-**Pipeline response:**
-
-```json
-{
-  "task_id": "...",
-  "status": "completed",
-  "steps": [
-    { "step_index": 0, "action": "run", "status": "completed", "result": {...}, "error": null },
-    { "step_index": 1, "action": "llm", "status": "completed", "result": {...}, "error": null }
-  ]
-}
-```
-
----
-
-## Step Output Chaining
-
-Reference a prior step's result inside any param value:
-
-```
-{{steps[N].result.key.subkey}}
-```
-
-- `N` is the zero-based step index.
-- `key.subkey` is a dot-delimited path into that step's `result` object.
-- Full-string placeholder → resolved value keeps its original type.
-- Inline placeholder (embedded in a larger string) → converted to string.
-
-**Example — shell output → file write (most common pattern):**
-
-```json
-{
-  "contract_version": "1.0",
-  "steps": [
-    {
-      "action": "run",
-      "params": { "contract_version": "1.0", "command": "ls -la /app" }
-    },
-    {
-      "action": "file_write",
-      "params": {
-        "contract_version": "1.0",
-        "path": "output/listing.txt",
-        "content": "{{steps[0].result.stdout}}"
-      }
-    }
-  ]
-}
-```
-
-**Example — LLM output → file write:**
-
-```json
-{
-  "contract_version": "1.0",
-  "steps": [
-    {
-      "action": "llm",
-      "params": {
-        "contract_version": "1.0",
-        "model": "maestro-assistant:latest",
-        "prompt": "Summarise the key points of async/await in Python."
-      }
-    },
-    {
-      "action": "file_write",
-      "params": {
-        "contract_version": "1.0",
-        "path": "notes/async.txt",
-        "content": "{{steps[0].result.text}}"
-      }
-    }
-  ]
-}
-```
-
-**Example — shell output → LLM prompt (inline):**
-
-```json
-{
-  "contract_version": "1.0",
-  "steps": [
-    {
-      "action": "run",
-      "params": { "contract_version": "1.0", "command": "cat /data/report.txt" }
-    },
-    {
-      "action": "llm",
-      "params": {
-        "contract_version": "1.0",
-        "model": "llama3.1:8b",
-        "prompt": "Summarise this report:\n\n{{steps[0].result.stdout}}"
-      }
-    }
-  ]
-}
-```
-
-**Example — embed text → upsert vector (recommended for high-dim vectors):**
-
-This pattern avoids the LLM having to generate 768+ float values in tool call args,
-which can exceed token limits and cause the call to abort. Instead, the embedding is
-generated server-side and chained directly into the upsert.
-
-```json
-{
-  "contract_version": "1.0",
-  "steps": [
-    {
-      "action": "embed",
-      "params": {
-        "contract_version": "1.0",
-        "input": "Text to embed and store"
-      }
-    },
-    {
-      "action": "vector.upsert",
-      "params": {
-        "contract_version": "1.0",
-        "collection": "my_collection",
-        "points": [
-          {
-            "id": 1,
-            "vector": "{{steps[0].result.embeddings.0}}",
-            "payload": { "text": "Text to embed and store" }
-          }
-        ]
-      }
-    }
-  ]
-}
-```
-
----
-
-## Error Handling Rules
-
-- Always check `status == "failed"` before using `result`.
-- `error` contains a human-readable message when `status == "failed"`.
-- For `/pipeline`, check each step's `status` individually.
-- `"Ref resolution failed: ..."` means a `{{steps[N].result.key}}` placeholder could not be resolved (bad index or missing key).
-- HTTP errors (401, 503) indicate auth failure or backend unavailability — these are transport-level and return non-JSON bodies.
-
----
-
-## Webhooks
-
-Add `"callback_url": "http://..."` to any mutating request. Maestro will POST the full response envelope to that URL after completion. Fire-and-forget; delivery is not guaranteed.
-
----
-
-## Startup Behavior
-
-When Maestro starts without `MAESTRO_API_KEY` configured, it logs a warning:
-
-```
-WARNING: MAESTRO_API_KEY is not set — authentication is DISABLED. This is insecure for production environments.
-```
-
-This makes it obvious when the service is running with auth bypassed.
-
----
-
-## Metrics
-
-`GET /metrics` returns runtime counters as JSON. `GET /metrics/prometheus` returns the same data
-in Prometheus text exposition format. All counters increment from 0 on startup.
-
-Key counters:
-
-- `requests_total` — all HTTP requests
-- `run_total` / `run_failed` — shell execution
-- `llm_total` / `llm_failed` — LLM inference
-- `embed_total` / `embed_failed` — embedding generation
-- `docker_total` / `docker_failed` — Docker container operations
-- `pipeline_total` / `pipeline_failed` — pipeline executions
-- `rate_limited_total` — requests blocked by rate limiting
-- `backend_selected_total` — backend selection frequency (generic, all backends)
-- `config_reload_total` / `config_reload_failed` — backends.yaml hot-reload events
-- `failure_timeout` / `failure_invalid_input` / `failure_backend_error` — failure classification
-- `dry_run_total` — dry-run requests
+Adapters must not bypass server-side feature flags, scoped keys, rate limits, or file path constraints.

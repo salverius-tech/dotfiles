@@ -30,9 +30,9 @@ Pi loads `~/.agents/adapters/pi/extensions/maestro.ts` through the global `exten
 - dots become underscores
 - no legacy aliases such as `maestro_vector_collections_list`
 
-Examples: `maestro_run`, `maestro_memory_put`, `maestro_vector_list_collections`, `maestro_docker_logs`.
+Examples: `maestro_run`, `maestro_memory_put`, `maestro_vector_list_collections`, `maestro_artifact_put`, `maestro_tasks_submit`, `maestro_docker_logs`.
 
-Set `MAESTRO_BASE_URL` before using Maestro tools. Set `MAESTRO_API_KEY` when the server requires authentication. Feature-gated server capabilities (shell, Docker, memory) are controlled by Maestro server environment variables and are not bypassed by Pi.
+Set `MAESTRO_BASE_URL` before using Maestro tools. Set `MAESTRO_API_KEY` when the server requires authentication. Feature-gated server capabilities (shell, Docker, memory) and scoped-key authorization are controlled by Maestro server environment variables and are not bypassed by Pi. `GET /capabilities` is scope-aware; scoped API keys may hide tools that the current key cannot use.
 
 ## Session Workflow
 

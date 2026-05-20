@@ -36,6 +36,8 @@ Examples:
 - `vector.create_collection` → `maestro_vector_create_collection`
 - `vector.delete_collection` → `maestro_vector_delete_collection`
 - `memory.put` → `maestro_memory_put`
+- `artifact.cleanup_expired` → `maestro_artifact_cleanup_expired`
+- `tasks.submit` → `maestro_tasks_submit`
 
 The legacy `maestro_vector_collections_*` names must never be exported.
 
@@ -58,11 +60,11 @@ These patterns must not appear in Maestro OpenCode tool files:
 
 All env var reads must occur inside `getMaestroConfig()`, called lazily from tool execution.
 
-`MAESTRO_BASE_URL` is required for calls. `MAESTRO_API_KEY` is optional at module load and should be sent as `X-API-Key` only when set.
+`MAESTRO_BASE_URL` is required for calls. `MAESTRO_API_KEY` is optional at module load and should be sent as `X-API-Key` only when set. The server may also define scoped keys with `MAESTRO_API_KEYS`; the adapter does not parse scoped-key configuration and must rely on server authorization.
 
 ## Contract Version Injection
 
-`callMaestro()` injects `contract_version: "1.0"` into POST bodies. GET and DELETE requests do not need a body unless Maestro adds such a route in the future.
+`callMaestro()` injects `contract_version: "1.0"` into POST bodies that pass a request body. GET and DELETE requests do not need a body unless Maestro adds such a route in the future. Path-only POST control operations such as task cancel/retry and Docker stop do not require a versioned body.
 
 ## Return Contract
 

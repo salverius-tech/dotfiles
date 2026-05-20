@@ -2,7 +2,7 @@
 
 > Canonical, runtime-agnostic interface contract for Maestro tool adapters.
 
-**Tool contract document version:** 1.2
+**Tool contract document version:** 1.30
 **Current request `contract_version`:** `"1.0"`
 
 ## Source of Truth
@@ -18,7 +18,7 @@ This directory's `maestro.json` is the canonical dotfiles-side registry that ada
 
 ## Environment Variable Model
 
-All environment variable reads **must** occur lazily at invocation time, not at module load.
+All environment variable reads must occur lazily at invocation time, not at module load.
 This ensures:
 
 1. Module loading never fails due to missing env vars
@@ -28,20 +28,23 @@ This ensures:
 Environment variables:
 
 - `MAESTRO_BASE_URL` — Maestro server URL, e.g. `http://localhost:8100` (**required for calls**)
-- `MAESTRO_API_KEY` — API key sent as `X-API-Key` when set
+- `MAESTRO_API_KEY` — legacy/admin API key sent as `X-API-Key` when set
+- `MAESTRO_API_KEYS` — server-side scoped key map; adapters do not parse it
 - `MAESTRO_CLIENT_TIMEOUT_MS` — client timeout in milliseconds, default `310000`
 
-Current Maestro rejects anonymous access to authenticated endpoints by default unless the server is explicitly configured with `MAESTRO_ALLOW_ANONYMOUS_AUTH=true`. Adapters should allow `MAESTRO_API_KEY` to be absent at registration time, and include `X-API-Key` only when present.
+Current Maestro rejects anonymous access to authenticated endpoints by default unless the server is explicitly configured with `MAESTRO_ALLOW_ANONYMOUS_AUTH=true`. `GET /health` remains public. Detailed health, metrics, capabilities, manifest, and tool endpoints require API-key auth by default unless the server exposes selected read-only endpoints publicly.
+
+Adapters must allow `MAESTRO_API_KEY` to be absent at registration time, and include `X-API-Key` only when present.
 
 ## Contract Version
 
-Every POST request body to endpoints backed by a `ToolRequest` must include:
+Every mutating POST request body backed by a versioned request model must include:
 
 ```json
 { "contract_version": "1.0" }
 ```
 
-Read-only GET endpoints and DELETE endpoints do not require `contract_version` unless the server route explicitly accepts a body.
+Read-only GET endpoints and DELETE endpoints do not require `contract_version` unless a future route explicitly accepts a body.
 
 ## Tool Naming
 
@@ -59,6 +62,8 @@ Examples:
 | `vector.create_collection` | `maestro_vector_create_collection` |
 | `vector.delete_collection` | `maestro_vector_delete_collection` |
 | `memory.put` | `maestro_memory_put` |
+| `artifact.cleanup_expired` | `maestro_artifact_cleanup_expired` |
+| `tasks.submit` | `maestro_tasks_submit` |
 
 Legacy names such as `maestro_vector_collections_list` are invalid.
 
@@ -67,11 +72,14 @@ Legacy names such as `maestro_vector_collections_list` are invalid.
 The canonical registry contains these tools:
 
 - Service: `health`, `health_detailed`, `capabilities`, `manifest`, `metrics`, `metrics_prometheus`
-- Execution: `run`, `llm`, `embed`, `pipeline`
+- Execution: `run`, `llm`, `embed`, `rerank`, `text.chunk`, `pipeline`
 - Vector: `vector.upsert`, `vector.search`, `vector.delete`, `vector.list_collections`, `vector.create_collection`, `vector.delete_collection`
 - Memory: `memory.put`, `memory.get`, `memory.search`, `memory.list`, `memory.delete`
 - File: `file_read`, `file_write`
+- Artifacts: `artifact.put`, `artifact.list`, `artifact.get`, `artifact.delete`, `artifact.cleanup_expired`
+- Audit: `audit.list`
 - Docker: `docker_run`, `docker_status`, `docker_logs`, `docker_exec`, `docker_stop`, `docker_remove`
+- Managed tasks: `tasks.submit`, `tasks.list`, `tasks.get`, `tasks.logs`, `tasks.cancel`, `tasks.retry`, `tasks.delete`, `tasks.cleanup`
 
 ## Return Value Contract
 
@@ -80,17 +88,18 @@ Runtime adapters must return values in their host runtime's required tool-result
 - OpenCode adapter: JSON string
 - Pi adapter: Pi `ToolResult` object with `content` and `details`
 
-Adapters must surface Maestro envelopes without losing `task_id`, `status`, `result`, `error`, or `execution_id`.
+Adapters must surface Maestro envelopes without losing `task_id`, `status`, `result`, `error`, or `execution_id`. Some read-only endpoints return non-envelope shapes; adapters must surface those JSON payloads unchanged.
 
 ## Failure Handling
 
 - Non-2xx HTTP responses must throw/report tool failure.
 - Maestro envelope responses with `status: "failed"` must throw/report tool failure even when HTTP status is 200.
 - Error messages should include `task_id`, `execution_id`, and `error` when available.
+- Scoped API keys may hide tools from `/capabilities` or return `403` for insufficient scope; adapters must not bypass server authorization.
 
 ## Dry-Run Support
 
-Tools supporting dry-run must check `dry_run` before performing side effects when adapter-side dry-run is implemented. The mock response must use a Maestro-like envelope:
+Tools supporting dry-run may check `dry_run` before performing side effects when adapter-side dry-run is implemented. The mock response must use a Maestro-like envelope:
 
 ```json
 {
@@ -101,14 +110,16 @@ Tools supporting dry-run must check `dry_run` before performing side effects whe
 }
 ```
 
-## Feature Flags
+## Feature Flags and Scopes
 
 Certain endpoints require server-side feature flags:
 
 - Shell: `MAESTRO_ALLOW_SHELL=true`
 - Docker: `MAESTRO_ALLOW_DOCKER=true`
 - Memory: `MAESTRO_ALLOW_MEMORY=true`
-- File operations are constrained by `MAESTRO_FILE_BASE_DIR`
+- File and artifact operations are constrained by `MAESTRO_FILE_BASE_DIR`
+
+Scoped API keys are governed by the server's `MAESTRO_API_KEYS` configuration. `/manifest` exposes per-tool safety metadata and `/capabilities` exposes scope-filtered visibility plus pipeline action scopes.
 
 Adapters must not bypass these controls. Role constraints such as `allow_shell: false` are advisory for planners; enforcement is server-side.
 
