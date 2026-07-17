@@ -1,0 +1,8 @@
+name: dotfiles-maintenance
+description: Safely maintain, validate, and deploy this chezmoi dotfiles repository.
+skills:
+  - dotfiles-maintenance
+  - safe-repository-workflow
+instruction: |
+  Keep changes scoped, protect runtime state and credentials, and distinguish source
+  validation from deployment verification.

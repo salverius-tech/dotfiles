@@ -1,0 +1,8 @@
+name: automation
+description: Design safe, self-contained Hermes scheduled tasks.
+skills:
+  - scheduled-task-authoring
+  - hermes-operations
+instruction: |
+  Resolve inputs before scheduling, avoid recursive jobs, and verify the saved job,
+  run result, and delivery target independently.

@@ -1,71 +1,68 @@
 # OpenCode Adapter
 
-How OpenCode connects to the unified `.agents/` knowledge base.
+How OpenCode connects to the shared `.agents/` knowledge base.
 
-## Bootstrap Chain
+## Bootstrap chain
 
-1. **`~/.config/opencode/AGENTS.md`** — OpenCode's global instructions file. Imports this adapter and global rules.
-2. **`~/.agents/global/rules.md`** — Universal behavioral rules (shared across all runtimes).
-3. **This file** — OpenCode-specific skill discovery, tool integration, and runtime quirks.
+1. `~/.config/opencode/AGENTS.md` — OpenCode's global entrypoint.
+2. `~/.agents/global/rules.md` — runtime-neutral behavioral rules.
+3. This file — OpenCode-specific discovery, tools, and integration guidance.
 
-## Skill Discovery
+## Skill discovery
 
-OpenCode searches multiple paths for `SKILL.md` files (in order):
+OpenCode may discover skills from these locations, depending on its configuration:
+
 1. `.opencode/skills/` — project-local
-2. `~/.config/opencode/skills/` — user global
-3. `.claude/skills/` — Claude compat (project)
-4. `~/.claude/skills/` — Claude compat (global)
-5. `.agents/skills/` — agents (project)
-6. `~/.agents/skills/` — agents (global)
+2. `~/.config/opencode/skills/` — user-global
+3. `.claude/skills/` — Claude compatibility paths
+4. `~/.agents/skills/` — shared portable skills
+5. `~/.agents/adapters/opencode/skills/` — OpenCode-specific loaders
 
-Portable skill thin loaders live at:
-- `~/.agents/adapters/opencode/skills/*/SKILL.md` — 51 thin loaders pointing to `~/.agents/skills/*/knowledge.md`
+Use the paths supported by the installed OpenCode version. Do not assume a loader
+is active merely because it exists in the repository; verify the configured
+instructions and skill search paths.
 
-OpenCode also natively reads `~/.agents/skills/*/SKILL.md` if present (path 6 above).
+## OpenCode resources
 
-**To use adapter-specific loaders**, configure `opencode.json` instructions field or symlink into a discovered path.
+- `~/.config/opencode/AGENTS.md` — global OpenCode instructions
+- `~/.config/opencode/agents/` — global agent definitions
+- `.opencode/agents/` — project agent definitions
+- `~/.opencode/commands/` — global commands, when configured
+- `~/.config/opencode/tools/` — custom tool plugins
+- `~/.agents/skills/` — shared portable skill knowledge
 
-## Maestro Integration
+OpenCode reads `AGENTS.md` as its primary instruction format. It may also read
+Claude-compatible paths unless `OPENCODE_DISABLE_CLAUDE_CODE=1` is set.
 
-The `maestro/` subdirectory contains the OpenCode-specific contract for the Maestro tool suite:
+## Tool and workflow guidance
 
-```
-maestro/
-├── CONTRACT.md              OpenCode-specific contract
-├── check-contract.sh        Forbidden pattern checker
-└── tests/
-    └── check-schema-sync.sh Schema sync verification
-```
+- Prefer OpenCode-native file and search tools for inspection and targeted edits.
+- Use shell commands for execution, project-provided tooling, and operations that
+  require a shell.
+- Run independent read-only work in parallel when the runtime supports it.
+- Keep dependent operations sequential and avoid concurrent mutations to the same
+  files unless ownership is explicit.
+- Use subagents for isolated or parallel work, not as a default for every task.
+- Verify outputs with real tool results before reporting success.
 
-Runtime implementation: `~/.config/opencode/tools/maestro.ts`
-Canonical skill schemas: `~/.agents/skills/maestro/`
+## Maestro integration
 
-Tool exports use canonical adapter names only: prefix `maestro_` and replace dots from Maestro manifest names with underscores (`vector.list_collections` → `maestro_vector_list_collections`). Legacy `maestro_vector_collections_*` aliases are intentionally unsupported.
+This repository contains OpenCode-specific Maestro contracts and tool integration
+under the adapter's `maestro/` resources when deployed. Tool names and available
+capabilities are runtime- and server-dependent. Check the active manifest or
+`/capabilities` response rather than assuming a fixed tool count or permission set.
+Scoped API keys may expose fewer capabilities.
 
-The current integration exposes the full 45-tool Maestro surface, including reranking, text chunking, artifacts, audit listing, managed async tasks, memory, vectors, file I/O, Docker, metrics, and service introspection. `GET /capabilities` is scope-aware; scoped API keys may hide tools that the current key cannot use.
+When using Maestro:
 
-## Planner Configuration
+- use canonical `maestro_` tool names;
+- treat shell, Docker, memory, and other privileged capabilities as server-controlled;
+- do not treat an installed integration as proof that its runtime service is loaded;
+- verify the tool, gateway/plugin state, and any companion service separately.
 
-| File           | Purpose                                |
-| -------------- | -------------------------------------- |
-| `planner.json` | Role-adapter binding for planner agent |
+## Configuration and model selection
 
-The planner role's tool schema is defined at `~/.agents/roles/planner/tools/maestro.json`.
-
-## Commands
-
-OpenCode commands live at `~/.opencode/commands/*.md`:
-- `commit.md` — Git commit workflow (delegates to `~/.agents/skills/git-workflow/knowledge.md`)
-- `introspect.md` — Meta-improvement analysis (delegates to `~/.agents/skills/introspection/knowledge.md`)
-
-## Tool Plugins
-
-Custom tools at `~/.config/opencode/tools/`:
-- `maestro.ts` — Maestro API integration
-- `sanity.ts` — Sanity check utilities
-
-## OpenCode-Specific Notes
-
-- To disable Claude compatibility paths: set `OPENCODE_DISABLE_CLAUDE_CODE=1`
-- Agent definitions: `~/.config/opencode/agents/*.md` or `.opencode/agents/*.md`
-- OpenCode reads `AGENTS.md` (not `CLAUDE.md`) as its primary global instructions file
+Use the configured provider and model defaults unless the user explicitly requests
+otherwise. Select capability or reasoning effort according to task risk and ease of
+verification; do not hard-code Opus/Sonnet/Haiku, GPT, or other vendor tiers into
+shared workflow instructions.

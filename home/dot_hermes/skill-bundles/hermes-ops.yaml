@@ -1,0 +1,8 @@
+name: hermes-ops
+description: Safely inspect and maintain Hermes Agent installations.
+skills:
+  - hermes-operations
+  - plugin-runtime-verification
+instruction: |
+  Distinguish installed, enabled, loaded, ready, and verified states. Never expose
+  credentials or claim runtime activation without evidence.

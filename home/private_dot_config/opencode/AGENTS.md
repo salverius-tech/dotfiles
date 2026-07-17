@@ -1,18 +1,29 @@
 # OpenCode Global Instructions
 
-Read `~/.agents/global/rules.md` for universal behavioral rules.
-Read `~/.agents/adapters/opencode/adapter.md` for OpenCode-specific skill discovery and tool integration.
+Read `~/.agents/global/rules.md` for shared behavioral rules.
+Read `~/.agents/adapters/opencode/adapter.md` for OpenCode-specific discovery,
+tools, and runtime behavior.
 
-## OpenCode-Specific Rules
+## OpenCode workflow
 
-- Use subagent tasks where possible to speed up work
-- Always use `python` not `python3` in bash commands
-- `make test` failing or showing warnings is ALWAYS an issue and must be fixed
+- Use OpenCode-native tools for file inspection and editing when available.
+- Use subagents when work is genuinely parallelizable, isolated, or independently
+  reviewable; prefer direct execution for small or sequential tasks.
+- Use the project's declared interpreter. Prefer `uv run` for uv-managed Python
+  projects; otherwise verify whether `python3` or `python` is available.
+- Run the narrowest relevant validation after changes. Treat warnings and failures
+  as findings to investigate, while respecting the project's documented policy.
+- Do not commit, push, deploy, or perform destructive operations without explicit
+  user authorization.
+- Before claiming completion, verify the changed artifact and report remaining
+  uncertainty.
 
 ## Skills
 
-Skills load automatically when relevant. Portable skills are at `~/.agents/skills/*/knowledge.md`.
-OpenCode adapter thin loaders are at `~/.agents/adapters/opencode/skills/*/SKILL.md`.
+Skills load when relevant. Portable skill knowledge is at:
+`~/.agents/skills/*/knowledge.md`.
+OpenCode adapter loaders are at:
+`~/.agents/adapters/opencode/skills/*/SKILL.md`.
 
 ## Commands
 

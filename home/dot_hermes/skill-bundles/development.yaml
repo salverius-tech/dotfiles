@@ -1,0 +1,8 @@
+name: development
+description: Review, implement, and verify ordinary software changes.
+skills:
+  - safe-repository-workflow
+  - evidence-based-research
+instruction: |
+  Inspect project guidance and existing tests first. Use the project's own tools,
+  verify the changed scope, and report unverified layers explicitly.

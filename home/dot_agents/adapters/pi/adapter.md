@@ -1,49 +1,57 @@
 # Pi Adapter
 
-Pi-specific instructions for the unified `~/.agents` system.
+Pi-specific guidance for the shared `~/.agents` system.
 
-## Tool Usage
+## Tool usage
 
 - Use `read` to inspect files before editing.
 - Use `edit` for precise, targeted replacements.
 - Use `write` only for new files or deliberate full rewrites.
-- Use `bash` for repository inspection, tests, and file operations (`find`, `rg`, `ls`, `git`, `make`).
-- Prefer project-provided commands (`make test`, `npm test`, `pytest`, etc.) over ad hoc commands.
+- Use `bash` for shell execution, repository inspection, tests, and project-provided
+  commands. Prefer native Pi tools when they provide the needed capability.
+- Use the project's declared runtime and interpreter; verify command availability.
 - Do not commit or push unless explicitly asked.
 
-## Pi Resources
+## Pi resources
 
 Pi loads resources from:
 
-- `~/.pi/agent/AGENTS.md` for global Pi context
-- `~/.pi/agent/settings.json` for global Pi settings
-- `~/.pi/agent/prompts/*.md` for slash prompt templates
-- `~/.pi/agent/extensions/*.ts` for extensions
-- `~/.pi/agent/skills/` and `~/.agents/skills/` for Agent Skills
-- `.pi/` and `.agents/` directories in projects for project-level resources
+- `~/.pi/agent/AGENTS.md` — global Pi context
+- `~/.pi/agent/settings.json` — global Pi settings
+- `~/.pi/agent/prompts/*.md` — slash prompt templates
+- `~/.pi/agent/extensions/*.ts` — extensions
+- `~/.pi/agent/skills/` and `~/.agents/skills/` — Agent Skills
+- `.pi/` and `.agents/` — project-level resources
 
-## Maestro Integration
+Verify that a resource is enabled or discoverable in the active Pi configuration;
+presence in the dotfiles repository alone does not activate it.
 
-Pi loads `~/.agents/adapters/pi/extensions/maestro.ts` through the global `extensions` setting. The extension registers Maestro tools using canonical names derived from the Maestro manifest:
+## Maestro integration
 
-- prefix: `maestro_`
-- dots become underscores
-- no legacy aliases such as `maestro_vector_collections_list`
+Pi can load the Maestro extension from:
+`~/.agents/adapters/pi/extensions/maestro.ts`.
 
-Examples: `maestro_run`, `maestro_memory_put`, `maestro_vector_list_collections`, `maestro_artifact_put`, `maestro_tasks_submit`, `maestro_docker_logs`.
+Tool names and capabilities are derived from the active Maestro manifest and server
+capabilities. Use canonical `maestro_` names, and do not assume a fixed tool count
+or authorization scope. `MAESTRO_BASE_URL` and, when required,
+`MAESTRO_API_KEY` configure the connection.
 
-Set `MAESTRO_BASE_URL` before using Maestro tools. Set `MAESTRO_API_KEY` when the server requires authentication. Feature-gated server capabilities (shell, Docker, memory) and scoped-key authorization are controlled by Maestro server environment variables and are not bypassed by Pi. `GET /capabilities` is scope-aware; scoped API keys may hide tools that the current key cannot use.
+Server-controlled capabilities such as shell, Docker, and memory cannot be bypassed
+by Pi. Verify the extension, server health, and scoped-key permissions separately.
 
-## Session Workflow
+## Session workflow
 
-- Use `/tree`, `/fork`, and `/compact` for long sessions instead of losing context.
-- Use `/pickup` to inspect repo state and resume work.
-- Use `/snapshot` to create a compact project status file before ending a long task.
-- Use `pi -c` to continue the latest session and `pi -r` to resume from a session picker.
+- Use `/tree`, `/fork`, and `/compact` for long sessions when useful.
+- Use `/pickup` to inspect repository state and resume work.
+- Use `/snapshot` to create compact project state before ending a long task.
+- Use `pi -c` to continue the latest session and `pi -r` to use the session picker.
 
 ## Safety
 
 - Never write secrets or local credentials into managed dotfiles.
-- Avoid destructive shell commands without user confirmation.
-- Do not modify `.env`, SSH keys, credential stores, or auth files.
-- Treat third-party Pi packages/extensions as trusted code with full system access; review before installing.
+- Confirm scope before destructive shell commands or external side effects.
+- Do not modify `.env`, SSH keys, credential stores, or authentication files unless
+  explicitly requested and safely scoped.
+- Treat third-party Pi packages and extensions as trusted code with system access;
+  review them before installing.
+- Verify changed artifacts and relevant checks before reporting completion.

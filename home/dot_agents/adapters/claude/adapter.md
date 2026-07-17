@@ -65,7 +65,9 @@ Commands and agents remain in `~/.claude/`:
 - `~/.claude/hooks/` — Hook scripts
 - `~/.claude/tools/` — Tool plugins
 
-## Personality
-- No toggle needed, people who use light mode are just wrong
-- Use subagent tasks where possible to speed up work
-- Always use `python` not `python3` in bash commands
+## Configuration and interpreter guidance
+
+- Use the project's declared Python interpreter.
+- Prefer `uv run` in uv-managed projects.
+- Otherwise use `python3` or `python` only after verifying which command exists.
+- Do not assume a particular interpreter alias is available across platforms.

@@ -18,11 +18,16 @@ This repository manages shell configurations, development tools, and Claude Code
 │   │   └── windows/
 │   ├── dot_*                      # Dotfiles (renamed from .prefix)
 │   ├── private_dot_*              # Private dotfiles (permissions 600)
-│   └── dot_claude/                # Claude Code configuration
-│       ├── CLAUDE.md              # Personal Claude ruleset
-│       ├── commands/              # Custom slash commands
-│       ├── skills/                # Auto-activating skills
-│       └── agents/                # Specialized agent definitions
+│   ├── dot_claude/                # Claude Code configuration
+│   │   ├── CLAUDE.md              # Personal Claude ruleset
+│   │   ├── commands/              # Custom slash commands
+│   │   ├── skills/                # Auto-activating skills
+│   │   └── agents/                # Specialized agent definitions
+│   └── dot_hermes/                # Hermes Agent configuration
+│       ├── SOUL.md                # Hermes personality and baseline behavior
+│       ├── skills/                 # Hermes-native user skills
+│       ├── skill-bundles/          # Composable Hermes workflows
+│       └── README.md               # Hermes setup and lifecycle notes
 └── README.md                      # User-facing documentation
 ```
 
@@ -137,6 +142,13 @@ Dotfiles Repository
 - etc.
 
 **Agents**: Located in `dot_claude/agents/`. Load on demand via `/load-agent <name>`.
+
+**Hermes Agent**:
+- Global identity: `home/dot_hermes/SOUL.md` → `~/.hermes/SOUL.md`
+- Runtime adapter: `home/dot_agents/adapters/hermes/adapter.md`
+- Portable rules: `home/dot_agents/global/rules.md`
+- Project context follows Hermes' documented `.hermes.md`/`HERMES.md`, `AGENTS.md`,
+  and `CLAUDE.md` priority rules.
 
 ## Claude Code Integration
 
