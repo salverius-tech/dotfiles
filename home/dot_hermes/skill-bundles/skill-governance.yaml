@@ -1,0 +1,10 @@
+name: skill-governance
+description: Audit, measure, update, and prune Hermes skills safely.
+skills:
+  - skill-fitness
+  - evidence-based-research
+instruction: |
+  Inspect the repository and authoritative documentation before changing a skill.
+  State the trigger, version assumptions, oracle, and evidence. Do not invent lift
+  measurements. Prefer narrowing, merging, updating, or removing stale skills over
+  adding redundant guidance.

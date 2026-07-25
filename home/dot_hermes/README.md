@@ -59,7 +59,9 @@ hermes skills audit
 ```
 
 The repository's skills are intentionally focused on workflows specific to this
-environment. Shared cross-runtime knowledge remains under `home/dot_agents/`.
+environment. Current workflow skills include `safe-repository-workflow`,
+`evidence-based-research`, `scheduled-task-authoring`, and `skill-fitness`.
+Shared cross-runtime knowledge remains under `home/dot_agents/`.
 
 ## Shared skills
 
@@ -96,6 +98,12 @@ Available repository bundles include:
 - `/dotfiles-maintenance`
 - `/development`
 - `/automation`
+- `/skill-governance`
+
+The repository intentionally favors a small set of high-fitness workflows over
+turning every article in an external pattern encyclopedia into a separate skill.
+Use `/skill-governance` when creating, reviewing, measuring, updating, or pruning
+skills and bundles.
 
 ## Plugins
 
