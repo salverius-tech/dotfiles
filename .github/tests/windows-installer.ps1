@@ -14,6 +14,41 @@ try { Invoke-Native (Get-Process -Id $PID).Path @('-NoProfile', '-Command', 'exi
 catch { $failed = $_ -match 'exit code 23' }
 if (-not $failed) { throw 'Native command failure was swallowed' }
 
+# Exercise the native call with legacy quoting, including under PowerShell 7.
+# Windows PowerShell 5.1 always uses legacy argument passing.
+$PSNativeCommandArgumentPassing = 'Legacy'
+Assert-NodeVersion
+function node {
+    param([string]$Option)
+    if ($Option -ne '--version') { throw 'Version check must not use inline JavaScript' }
+    $global:LASTEXITCODE = $script:nodeExitCode
+    $script:nodeVersion
+}
+$script:nodeExitCode = 0
+foreach ($version in @('v22.19.0', 'v24.14.0', 'v25.0.0')) {
+    $script:nodeVersion = $version
+    Assert-NodeVersion
+}
+foreach ($version in @('v20.19.0', 'v22.18.0')) {
+    $script:nodeVersion = $version
+    $failed = $false
+    try { Assert-NodeVersion }
+    catch { $failed = $_ -match 'requires Node.js >=22.19.0' }
+    if (-not $failed) { throw "Unsupported Node.js $version was accepted" }
+}
+$script:nodeVersion = 'invalid-version'
+$failed = $false
+try { Assert-NodeVersion }
+catch { $failed = $_ -match 'Could not parse Node.js version' }
+if (-not $failed) { throw 'Invalid Node.js version was accepted' }
+$script:nodeVersion = 'v24.14.0'
+$script:nodeExitCode = 19
+$failed = $false
+try { Assert-NodeVersion }
+catch { $failed = $_ -match 'exit code 19' }
+if (-not $failed) { throw 'Failed Node.js version command was accepted' }
+Remove-Item Function:node
+
 $script:refreshed = 0
 function Update-SessionPath { $script:refreshed++ }
 function winget {

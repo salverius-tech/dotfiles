@@ -41,6 +41,10 @@ jobs:
       - name: Test installer failure handling without installing packages
         shell: pwsh
         run: ./.github/tests/windows-installer.ps1
+      - name: Test installer compatibility with Windows PowerShell 5.1
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: ./.github/tests/windows-installer.ps1
 
   upstream-install:
     name: Upstream Linux installation smoke test
