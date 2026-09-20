@@ -1,185 +1,102 @@
 # chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
-# Windows package installation script
+# Required installations must fail so chezmoi retries incomplete setup.
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $false
 
-# Check for Administrator privileges. Admin is preferred, but user-level setup can proceed without it.
-$IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')
-if (-not $IsAdmin) {
-    Write-Warning "Not running as Administrator. System-level changes may be skipped."
-    Write-Host "For full setup, right-click PowerShell → 'Run as administrator' and re-run chezmoi apply." -ForegroundColor Cyan
-}
-
-# Enable SSH Agent service (required for SSH keys)
-if ($IsAdmin) {
-    Write-Host "Configuring SSH Agent service..." -ForegroundColor Cyan
-    $sshAgent = Get-Service -Name ssh-agent -ErrorAction SilentlyContinue
-    if ($sshAgent) {
-        if ($sshAgent.StartType -eq 'Disabled') {
-            Set-Service -Name ssh-agent -StartupType Automatic
-            Write-Host "  Enabled ssh-agent (set to Automatic)" -ForegroundColor Green
-        }
-        if ($sshAgent.Status -ne 'Running') {
-            Start-Service -Name ssh-agent -ErrorAction SilentlyContinue
-            Write-Host "  Started ssh-agent service" -ForegroundColor Green
-        }
-    } else {
-        Write-Warning "  ssh-agent service not found. Install OpenSSH Client via Windows Settings → Apps → Optional Features."
+function Invoke-Native {
+    param([string]$Command, [string[]]$Arguments)
+    & $Command @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Command failed with exit code $LASTEXITCODE"
     }
-} else {
-    Write-Warning "Skipping ssh-agent service configuration because this shell is not elevated."
 }
 
-Write-Host "Installing packages for Windows..." -ForegroundColor Cyan
-
-# Check PowerShell execution policy
-$currentPolicy = Get-ExecutionPolicy -Scope CurrentUser
-if ($currentPolicy -eq 'Restricted' -or $currentPolicy -eq 'AllSigned') {
-    Write-Host "WARNING: PowerShell execution policy is set to '$currentPolicy'" -ForegroundColor Red
-    Write-Host "This will prevent your PowerShell profile from loading." -ForegroundColor Yellow
-    Write-Host "To fix this, run PowerShell as Administrator and execute:" -ForegroundColor Cyan
-    Write-Host "  Set-ExecutionPolicy RemoteSigned -Scope LocalMachine" -ForegroundColor White
-    Write-Host ""
-    Write-Host "Continuing with package installation anyway..." -ForegroundColor Yellow
+function Update-SessionPath {
+    $paths = @(
+        [Environment]::GetEnvironmentVariable('Path', 'Machine'),
+        [Environment]::GetEnvironmentVariable('Path', 'User'),
+        "$env:APPDATA\npm", "$env:USERPROFILE\.bun\bin", $env:PATH
+    )
+    $env:PATH = ($paths -join ';')
 }
 
-# Install Git for Windows (required by Pi for Git Bash on native Windows)
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-    Write-Host "Installing Git for Windows..." -ForegroundColor Yellow
-    winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements --silent
-} else {
-    Write-Host "Git already installed, skipping..." -ForegroundColor Green
+function Install-WingetPackage {
+    param([string]$Id, [string]$Command)
+    if ($Command -and (Get-Command $Command -ErrorAction SilentlyContinue)) { return }
+    $installed = winget list --id $Id --exact --accept-source-agreements 2>$null
+    if ($LASTEXITCODE -ne 0 -or -not ($installed -match [regex]::Escape($Id))) {
+        Invoke-Native winget @('install', '--id', $Id, '--exact', '--source', 'winget',
+            '--accept-source-agreements', '--accept-package-agreements', '--silent')
+    }
+    Update-SessionPath
+    if ($Command -and -not (Get-Command $Command -ErrorAction SilentlyContinue)) {
+        throw "$Command is unavailable after installing $Id. Restart the shell and re-run chezmoi apply."
+    }
 }
 
-# Install Node.js LTS (required for Pi)
-if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
-    Write-Host "Installing Node.js LTS..." -ForegroundColor Yellow
-    winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements --silent
-} else {
-    Write-Host "Node.js/npm already installed, skipping..." -ForegroundColor Green
-}
+$null = Get-Command winget -ErrorAction Stop
+Update-SessionPath
+Install-WingetPackage 'Git.Git' 'git'
+Install-WingetPackage 'OpenJS.NodeJS.LTS' 'npm'
+Invoke-Native node @('-e', 'const [a,b]=process.versions.node.split(".").map(Number); if(a<22 || (a===22 && b<19)) process.exit(1)')
+Install-WingetPackage 'Starship.Starship' 'starship'
+Install-WingetPackage 'Microsoft.VisualStudioCode' 'code'
+Install-WingetPackage 'DEVCOM.JetBrainsMonoNerdFont' ''
 
-# Install Starship prompt
-if (-not (Get-Command starship -ErrorAction SilentlyContinue)) {
-    Write-Host "Installing Starship..." -ForegroundColor Yellow
-    winget install --id Starship.Starship -e --accept-source-agreements --accept-package-agreements --silent
-} else {
-    Write-Host "Starship already installed, skipping..." -ForegroundColor Green
-}
-
-# Install Visual Studio Code
-if (-not (Get-Command code -ErrorAction SilentlyContinue)) {
-    Write-Host "Installing Visual Studio Code..." -ForegroundColor Yellow
-    winget install --id Microsoft.VisualStudioCode -e --accept-source-agreements --accept-package-agreements --silent
-} else {
-    Write-Host "Visual Studio Code already installed, skipping..." -ForegroundColor Green
-}
-
-# Install JetBrains Mono Nerd Font
-Write-Host "Installing JetBrains Mono Nerd Font..." -ForegroundColor Yellow
-winget install --id DEVCOM.JetBrainsMonoNerdFont -e --accept-source-agreements --accept-package-agreements --silent
-
-# Install Bun (JavaScript runtime required for opencode on Windows)
-Write-Host "Checking for Bun installation..." -ForegroundColor Cyan
 if (-not (Get-Command bun -ErrorAction SilentlyContinue)) {
-    Write-Host "Installing Bun..." -ForegroundColor Yellow
+    if ([Environment]::OSVersion.Version.Build -lt 17763) {
+        throw 'Bun requires Windows 10 build 17763 or newer.'
+    }
+    $installer = Join-Path ([IO.Path]::GetTempPath()) "$([guid]::NewGuid()).ps1"
     try {
-        # Check Windows version (Bun requires Windows 10 1809+ / build 17763)
-        $WinVer = [System.Environment]::OSVersion.Version
-        $MinBuild = 17763
-        if ($WinVer.Major -lt 10 -or ($WinVer.Major -eq 10 -and $WinVer.Build -lt $MinBuild)) {
-            Write-Warning "Bun requires Windows 10 version 1809 or newer. Skipping Bun installation."
-        } else {
-            # Use official Bun install script
-            powershell -c "irm bun.sh/install.ps1 | iex"
-            # Add Bun to PATH for current session
-            $env:PATH = "$env:USERPROFILE\.bun\bin;$env:PATH"
-            Write-Host "Bun installed successfully" -ForegroundColor Green
-        }
-    } catch {
-        Write-Warning "Failed to install Bun: $_"
+        Invoke-WebRequest 'https://bun.sh/install.ps1' -OutFile $installer
+        Invoke-Native powershell.exe @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $installer)
+    } finally {
+        Remove-Item $installer -ErrorAction SilentlyContinue
     }
-} else {
-    Write-Host "Bun already installed, skipping..." -ForegroundColor Green
+    Update-SessionPath
+    $null = Get-Command bun -ErrorAction Stop
+}
+if (-not (Get-Command pi -ErrorAction SilentlyContinue)) {
+    Invoke-Native npm @('install', '-g', '@earendil-works/pi-coding-agent')
+    Update-SessionPath
+    $null = Get-Command pi -ErrorAction Stop
+}
+if (-not (Get-Command opencode -ErrorAction SilentlyContinue)) {
+    Invoke-Native bun @('add', '-g', 'opencode-ai')
+    Update-SessionPath
+    $null = Get-Command opencode -ErrorAction Stop
 }
 
-# Install Pi using npm
-Write-Host "Checking for Pi coding agent installation..." -ForegroundColor Cyan
-if (Get-Command npm -ErrorAction SilentlyContinue) {
-    if (-not (Get-Command pi -ErrorAction SilentlyContinue)) {
-        Write-Host "Installing Pi coding agent via npm..." -ForegroundColor Yellow
-        try {
-            npm install -g @earendil-works/pi-coding-agent
-            Write-Host "Pi installed successfully" -ForegroundColor Green
-            Write-Host "Run 'pi' to start the coding agent" -ForegroundColor Cyan
-        } catch {
-            Write-Warning "Failed to install Pi via npm: $_"
+# Service configuration and editor extensions are optional conveniences.
+$IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if ($IsAdmin) {
+    try {
+        $agent = Get-Service ssh-agent -ErrorAction SilentlyContinue
+        if ($agent) {
+            Set-Service ssh-agent -StartupType Automatic
+            Start-Service ssh-agent
         }
-    } else {
-        Write-Host "Pi already installed, skipping..." -ForegroundColor Green
-    }
+    } catch { Write-Warning "Optional SSH agent setup failed: $_" }
 } else {
-    Write-Warning "npm not available, skipping Pi installation. Restart the shell after Node.js install and re-run chezmoi apply."
+    Write-Host 'Skipping optional SSH service configuration (not elevated).'
 }
 
-# Install opencode using Bun
-Write-Host "Checking for opencode installation..." -ForegroundColor Cyan
-if (Get-Command bun -ErrorAction SilentlyContinue) {
-    if (-not (Get-Command opencode -ErrorAction SilentlyContinue)) {
-        Write-Host "Installing opencode via Bun..." -ForegroundColor Yellow
-        try {
-            bun add -g opencode-ai
-            Write-Host "opencode installed successfully" -ForegroundColor Green
-            Write-Host "Run 'opencode' to start the AI assistant" -ForegroundColor Cyan
-        } catch {
-            Write-Warning "Failed to install opencode via Bun: $_"
-        }
-    } else {
-        Write-Host "opencode already installed, skipping..." -ForegroundColor Green
-    }
-} else {
-    Write-Warning "Bun not available, skipping opencode installation"
-}
-
-# Install recommended VS Code extensions
-Write-Host "Checking VS Code extensions..." -ForegroundColor Cyan
-if (-not (Get-Command code -ErrorAction SilentlyContinue)) {
-    Write-Warning "code command not available yet. Restart the shell after VS Code install and re-run chezmoi apply to install extensions."
-} else {
 $extensions = @(
-    "usernamehw.errorlens",             # Inline error highlighting
-    "christian-kohler.path-intellisense", # Autocomplete filenames
-    "esbenp.prettier-vscode",           # Code formatting (JavaScript, TypeScript, HTML, CSS, JSON)
-    "vscode-icons-team.vscode-icons",   # File icons
-    "eamodio.gitlens",                  # Git supercharged
-    "ms-azuretools.vscode-docker",      # Docker integration
-    "ms-python.python",                 # Python support
-    "ms-vscode.powershell",             # PowerShell support
-    "yzhang.markdown-all-in-one",       # Markdown tools
-    "redhat.vscode-yaml",               # YAML support
-    "ms-vscode-remote.remote-ssh",      # Remote SSH
-    "ms-vscode-remote.remote-wsl",      # Remote WSL
-    "ms-vscode-remote.remote-containers" # Dev Containers
+    'usernamehw.errorlens', 'christian-kohler.path-intellisense',
+    'esbenp.prettier-vscode', 'vscode-icons-team.vscode-icons', 'eamodio.gitlens',
+    'ms-azuretools.vscode-docker', 'ms-python.python', 'ms-vscode.powershell',
+    'yzhang.markdown-all-in-one', 'redhat.vscode-yaml', 'ms-vscode-remote.remote-ssh',
+    'ms-vscode-remote.remote-wsl', 'ms-vscode-remote.remote-containers'
 )
-
-foreach ($ext in $extensions) {
-    try {
-        $installed = code --list-extensions 2>$null | Select-String $ext
-        if (-not $installed) {
-            Write-Host "Installing VS Code extension: $ext" -ForegroundColor Yellow
-            code --install-extension $ext --force 2>$null
-            Write-Host "Installed $ext" -ForegroundColor Green
-        } else {
-            Write-Host "$ext already installed" -ForegroundColor Green
+try {
+    $installed = @(Invoke-Native code @('--list-extensions'))
+    foreach ($extension in $extensions) {
+        if ($installed -notcontains $extension) {
+            Invoke-Native code @('--install-extension', $extension)
         }
-    } catch {
-        Write-Warning "Could not install extension $ext : $_"
     }
+} catch {
+    Write-Warning "Optional extensions incomplete; retry with code --install-extension <id>: $_"
 }
-}
-
-Write-Host "Package installation complete!" -ForegroundColor Green
-Write-Host "" -ForegroundColor White
-Write-Host "Post-setup actions required:" -ForegroundColor Cyan
-Write-Host "  1. Restart Windows Terminal to load new settings" -ForegroundColor White
-Write-Host "  2. Restart VS Code to apply settings" -ForegroundColor White
-Write-Host "  3. Restart Docker Desktop for 4GB RAM config" -ForegroundColor White
-Write-Host "  4. Run 'wsl --shutdown' and reopen WSL" -ForegroundColor White
+Write-Host 'Required packages installed. Restart your terminal to load updated settings.'

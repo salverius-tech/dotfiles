@@ -12,30 +12,23 @@ tags = ["key", "ssh"]
 [[rules]]
 id = "dotfiles-env-assignment-secret"
 description = "Likely secret assigned in an env-style line"
-regex = '''(?i)(api[_-]?key|token|secret|password|passwd|credential)\s*=\s*['\"]?[A-Za-z0-9_./+=:-]{20,}'''
+regex = '''(?im)^[\t ]*(?:export[\t ]+)?(?:api[_-]?key|token|secret|password|passwd|credential)[\t ]*=[\t ]*['\"]?[A-Za-z0-9_./+=:-]{20,}['\"]?[\t ]*(?:#.*)?$'''
 tags = ["secret", "env"]
 
-[allowlist]
-description = "Allow documented placeholder variable names, keyboard shortcut configs, and package metadata"
-regexes = [
-  '''OPENROUTER_API_KEY''',
-  '''ANTHROPIC_API_KEY''',
-  '''GEMINI_API_KEY''',
-  '''CHEZMOI_GIT_EMAIL''',
-  '''CHEZMOI_GIT_NAME''',
-  '''MAESTRO_API_KEY''',
-  '''MAESTRO_REDACTED''',
-  '''create_continuation_token\(''',
-  '''parse_continuation_token\('''
-]
+[[rules]]
+id = "generic-api-key"
+[[rules.allowlists]]
+description = "Documented keyboard shortcut, not an API key"
+condition = "AND"
+regexTarget = "secret"
+regexes = ['''^ctrl\+shift\+down$''']
 paths = [
-  '''home/dot_pi/agent/models\.json\.tmpl''',
-  '''README\.md''',
-  '''home/dot_agents/adapters/pi/extensions/maestro\.ts''',
-  '''home/private_dot_config/opencode/tools/maestro\.ts''',
-  '''home/AppData/Local/Microsoft/Windows Terminal/Fragments/dotfiles/settings\.json''',
-  '''home/AppData/Local/Packages/Microsoft\.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings\.json\.tmpl''',
-  '''home/AppData/Roaming/Code/User/keybindings\.json\.tmpl''',
-  '''home/dot_claude/tools/flaresolverr-mcp/SESSION_SNAPSHOT\.md''',
-  '''\.claude/tools/flaresolverr-mcp/SESSION_SNAPSHOT\.md'''
+  '''^home/AppData/Local/(?:Packages/Microsoft\.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings\.json\.tmpl|Microsoft/Windows Terminal/Fragments/dotfiles/settings\.json)$''',
+  '''^home/AppData/Roaming/Code/User/keybindings\.json\.tmpl$'''
 ]
+
+# Exact placeholder values only; never exclude entire files or variable names.
+[allowlist]
+description = "Explicit redacted placeholder"
+regexTarget = "secret"
+regexes = ['''^MAESTRO_REDACTED$''']

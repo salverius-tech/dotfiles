@@ -5,20 +5,20 @@
 set -euo pipefail
 
 # {{ if ne .chezmoi.os "windows" }}
-if [ "${CI:-}" = "true" ]; then
-    echo "CI detected, skipping Pi installation..."
-    exit 0
+if ! command -v npm >/dev/null 2>&1 || ! command -v node >/dev/null 2>&1; then
+    echo "Node.js >=22.19 and npm are required for Pi. Install them and re-run chezmoi apply." >&2
+    exit 1
 fi
-
-if ! command -v npm >/dev/null 2>&1; then
-    echo "npm is required to install Pi. Install Node.js/npm and re-run chezmoi apply."
-    exit 0
+if ! node -e 'const [a,b]=process.versions.node.split(".").map(Number); if(a<22 || (a===22 && b<19)) process.exit(1)'; then
+    echo "Pi requires Node.js >=22.19. Upgrade Node.js and re-run chezmoi apply." >&2
+    exit 1
 fi
 
 if ! command -v pi >/dev/null 2>&1; then
     echo "Installing Pi coding agent..."
     mkdir -p "${HOME}/.local"
     npm install -g --prefix "${HOME}/.local" @earendil-works/pi-coding-agent
+    test -x "${HOME}/.local/bin/pi"
 else
     echo "Pi coding agent already installed, skipping..."
 fi

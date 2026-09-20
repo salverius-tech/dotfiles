@@ -34,8 +34,9 @@ This repository manages shell configurations, development tools, and Claude Code
 ### Architecture Patterns
 
 **Template System:**
-- All chezmoi-managed files use `.tmpl` extension
-- Left/right delimiters: `# {{` and `}}` (for shell script compatibility)
+- Files requiring template expansion use the `.tmpl` extension; static files do not
+- Default delimiters are `{{` and `}}`; installer scripts declare `# {{` and `}}`
+  for shell/PowerShell compatibility
 - Data variables defined in `.chezmoi.toml.tmpl`:
   - `osid`: OS identifier (e.g., `linux-ubuntu`, `darwin`, `windows`)
   - `package_manager`: Detected package manager
@@ -195,8 +196,10 @@ make install-deps
 ### Local Testing
 Run all tests locally before committing:
 ```bash
-make test          # Quick tests (lint + secrets)
-make all           # Full test suite
+make test             # Lint, working-tree secret scan, regression tests
+make all              # Also isolated template/deployment and link checks
+make check-history    # Full Git history secret scan
+make test-deployment  # Config-only deployment twice; no installers executed
 ```
 
 ### Pre-commit Hooks
@@ -205,10 +208,22 @@ Install git hooks to run tests automatically before each commit:
 make setup-hooks
 ```
 
+The hook scans staged changes and runs checks against an exported index snapshot;
+it never stashes, resets, or changes working files. Tests use Node.js >=22.19.
+PowerShell installer regression tests can also be run with
+`pwsh -NoProfile -File .github/tests/windows-installer.ps1`.
+
 ### CI/CD
-- **Validate workflow**: Runs on every PR (linting, template validation, secret scanning)
-- **Integration workflow**: Runs on main branch (full installation tests on Linux and Windows)
-- **Discord notifications**: Both workflows send rich embed notifications to Discord
+- **Validate workflow**: PR/push ShellCheck, regression tests, local Markdown
+  links, actionlint, and working-tree/full-history secret scanning.
+- **Integration workflow**: PRs and main/master pushes validate isolated config
+  deployment and idempotency on Linux, macOS, and Windows, without installers.
+- **Weekly/manual upstream test**: Full Linux package/tool installation in a
+  disposable Debian/Node container; explicitly tests moving upstream dependencies.
+- **Discord notifications**: Both workflows safely handle untrusted metadata and
+  check HTTP results. Missing webhook secrets skip notification.
+- **Dependencies**: Actions are SHA-pinned and updated by Dependabot. CI tool
+  versions and checksum verification live in `.github/scripts/install-ci-tool.sh`.
 
 ## References
 

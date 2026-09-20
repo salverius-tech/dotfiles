@@ -84,8 +84,7 @@ Each command tracks its own checkpoint independently.
 
 ## Next Steps
 
-See individual documentation files for implementation details:
-- [Path Normalization](./path-normalization.md)
-- [Checkpoint Operations](./checkpoint-operations.md)
-- [History Filtering](./history-filtering.md)
-- [Usage Examples](./examples.md)
+The proposed companion documents (`path-normalization.md`,
+`checkpoint-operations.md`, `history-filtering.md`, and `examples.md`) have not
+been added. For the current implementation, see the
+[optimize-ruleset command](../../commands/optimize-ruleset.md).

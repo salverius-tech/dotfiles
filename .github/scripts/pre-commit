@@ -1,20 +1,20 @@
-#!/bin/bash
-# Pre-commit hook to run tests before commits
+#!/usr/bin/env bash
+# Validate the index without changing the working tree, index, or stash stack.
+set -euo pipefail
 
-echo "🔍 Running pre-commit checks..."
+cd "$(git rev-parse --show-toplevel)"
+snapshot=$(mktemp -d)
+trap 'rm -rf "$snapshot"' EXIT
+git checkout-index --all --prefix="$snapshot/"
 
-# Stash unstaged changes
-git stash -q --keep-index
+echo 'Scanning staged changes...'
+gitleaks git --staged --redact --config "$snapshot/.gitleaks.toml"
 
-# Run tests
-if ! make test; then
-    echo "❌ Pre-commit checks failed. Fix issues before committing."
-    git stash pop -q
-    exit 1
-fi
+# Git exports repository-specific variables to hooks. Do not leak them into
+# checks (including tests with temporary repositories) in the snapshot.
+while IFS= read -r variable; do
+    unset "$variable"
+done < <(git rev-parse --local-env-vars)
 
-# Restore unstaged changes
-git stash pop -q
-
-echo "✅ Pre-commit checks passed"
-exit 0
+make -C "$snapshot" test
+echo 'Staged checks passed'

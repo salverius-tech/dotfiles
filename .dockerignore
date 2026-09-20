@@ -1,0 +1,10 @@
+# Local credentials and agent runtime state must not enter the test image.
+**/.env
+**/.env.*
+**/node_modules/
+.git/
+.hermes/
+.pi/
+.specstory/
+.tmp/
+test-results/

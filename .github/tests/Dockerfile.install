@@ -1,0 +1,23 @@
+# Moving upstream dependencies are intentional in this scheduled smoke test.
+FROM node:22-bookworm
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl git sudo unzip fontconfig ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+RUN useradd -m -s /bin/bash testuser \
+    && echo 'testuser ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/testuser \
+    && chmod 440 /etc/sudoers.d/testuser
+COPY --chown=testuser:testuser .chezmoiroot /tmp/dotfiles/.chezmoiroot
+COPY --chown=testuser:testuser home/ /tmp/dotfiles/home/
+COPY --chown=testuser:testuser .github/scripts/install-ci-tool.sh /tmp/install-ci-tool.sh
+USER testuser
+WORKDIR /home/testuser
+ENV PATH="/home/testuser/.local/bin:/home/testuser/.opencode/bin:${PATH}" \
+    CHEZMOI_GIT_NAME=DotfilesTest CHEZMOI_GIT_EMAIL=dotfiles-test@example.invalid
+RUN bash /tmp/install-ci-tool.sh chezmoi /home/testuser/.local/bin
+RUN chezmoi init --apply --source=/tmp/dotfiles
+COPY --chown=testuser:testuser .github/scripts/check-deployment.mjs /tmp/check-deployment.mjs
+RUN chezmoi apply --source=/tmp/dotfiles \
+    && chezmoi verify --source=/tmp/dotfiles \
+    && chezmoi managed --source=/tmp/dotfiles --include files --path-style relative --nul-path-separator > /tmp/managed-files \
+    && node /tmp/check-deployment.mjs /home/testuser /tmp/managed-files \
+    && starship --version && pi --version && opencode --version

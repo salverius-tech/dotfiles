@@ -2,17 +2,12 @@
 # chezmoi:template:left-delimiter="# {{" right-delimiter="}}"
 # Installs opencode AI coding assistant
 
-set -e
+set -euo pipefail
 
 # {{ $pm := "unknown" }}
 # {{ if hasKey . "package_manager" }}# {{ $pm = .package_manager }}# {{ end }}
 
 # {{ if ne .chezmoi.os "windows" }}
-if [ "${CI:-}" = "true" ]; then
-    echo "CI detected, skipping opencode installation..."
-    exit 0
-fi
-
 if ! command -v opencode &> /dev/null; then
     echo "Installing opencode..."
     
